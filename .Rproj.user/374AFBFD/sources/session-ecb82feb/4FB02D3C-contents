@@ -1,0 +1,552 @@
+# Load packages
+library(ggplot2)
+library(haven)
+library(dplyr)
+
+
+
+####################
+# Import datasets  #
+####################
+
+adps <- read_xpt("/data/ta799-007-fa/cdisc/11_adam_xpt/adps.xpt")
+
+# Subsetting the data based on the conditions in the SAS code
+adps_filtered <- adps[adps$PARAMCD == "WKPSVOL" & 
+                        adps$FASFL == "Y" & 
+                        adps$ANL03FL == "Y", ]
+
+
+nVisit24 = length(na.omit(unique(adps$AVISITN[adps$AVISITN <= 24 & adps$AVISITN > 0])))
+nVisit24
+
+adpssample <-  adps_filtered[!is.na(adps_filtered$CHG) &
+                               adps_filtered$AVISITN== 24, ]
+
+
+# Calculate the mean and standard deviation by treatment (trt01P)
+summary_stats <- adpssample %>%
+  group_by(TRT01P) %>%
+  summarise(
+    Mean = mean(CHG, na.rm = TRUE),
+    SE = sd(CHG, na.rm = TRUE) / sqrt(n())
+  )
+
+# View the summary statistics
+print(summary_stats)
+
+
+df_PS <- data.frame(res=adpssample$CHG,
+                    group=adpssample$TRT01P)
+
+
+fit_cpn <- cpn((res/100)~group, data=df_PS)
+
+summary(fit_cpn)
+
+#---------------------------------------------------------
+
+
+#########################
+# Only CIC  at Week 24  #
+#########################
+
+df_PS_CIC24 <- data.frame(res=adpssample$CHG[adpssample$PTTYPE=="CIC"] ,
+                    group=adpssample$TRT01P[adpssample$PTTYPE=="CIC"])
+
+
+fit_cpn <- cpn((res/100)~group, data=df_PS_CIC24)
+fit_cpn <- cpn((res/40)~group, data=df_PS_CIC24)
+fit_cpn <- cpn((res/10)~group, data=df_PS_CIC24)
+summary(fit_cpn)
+
+library(profvis)
+
+profvis({
+  fit_cpn <- cpn((res/20)~group, data=df_PS_CIC24)
+})
+
+Rprof("cpn_profile.out")
+fit_cpn <- cpn((res/20)~group, data=df_PS_CIC24)
+Rprof(NULL)
+
+summaryRprof("cpn_profile.out")
+
+library(matrixStats)  # for logSumExp
+
+cpn_regression_neg_log_likelihood_x <- function(beta_mu_sigma, X, y, max_K = 200, pois_thresh = 1e-10) {
+  
+  # Extract parameters
+  p <- ncol(X)
+  beta <- beta_mu_sigma[1:p]
+  mu <- beta_mu_sigma[p + 1]
+  sigma <- beta_mu_sigma[p + 2]
+  
+  if (sigma <= 0) return(Inf)  # Invalid sigma
+  
+  # Linear predictor for lambda (log link)
+  eta <- X %*% beta
+  lambda_vec <- as.vector(exp(eta))  # λ_i for each observation
+  
+  # Preallocate vector for log-likelihoods
+  log_likelihoods <- numeric(length(y))
+  
+  for (i in seq_along(y)) {
+    x_i <- y[i]
+    lambda_i <- lambda_vec[i]
+    
+    if (x_i == 0) {
+      # Exact zero component
+      log_likelihoods[i] <- dpois(0, lambda_i, log = TRUE)
+    } else {
+      # Use truncated k-values
+      k_vals <- 1:max_K
+      log_pois <- dpois(k_vals, lambda_i, log = TRUE)
+      
+      # Truncate terms with negligible Poisson probability
+      keep <- log_pois > log(pois_thresh)
+      if (!any(keep)) return(Inf)  # All terms too small → underflow
+      
+      k_vals <- k_vals[keep]
+      log_pois <- log_pois[keep]
+      
+      # Normal log-probabilities
+      log_norm <- dnorm(x_i, mean = k_vals * mu, sd = sqrt(k_vals * sigma^2), log = TRUE)
+      
+      # Log-sum-exp to avoid underflow
+      log_likelihoods[i] <- logSumExp(log_pois + log_norm)
+    }
+  }
+  
+  # Return total negative log-likelihood
+  return(-sum(log_likelihoods))
+}
+
+
+cpn_x <- function(formula, data, mu_init = NULL, sigma_init = NULL, epsilon = 1e-6) {
+  # # Ensure required package
+  # if (!requireNamespace("numDeriv", quietly = TRUE)) {
+  #   stop("Package 'numDeriv' is required but not installed.")
+  # }
+  
+  # Build model frame and design matrix
+  mf <- model.frame(formula, data)
+  y <- model.response(mf)
+  X <- model.matrix(attr(mf, "terms"), data = mf)
+  
+  # Initial values
+  y_nonzero <- y
+  if (is.null(mu_init)) mu_init <- mean(y_nonzero)
+  if (is.null(sigma_init)) sigma_init <- sd(y_nonzero)
+  init_beta <- rep(0, ncol(X))
+  init_vals <- c(init_beta, mu_init, sigma_init)
+  
+  # Optimize negative log-likelihood
+  fit <- optim(
+    par = init_vals,
+    fn = cpn_regression_neg_log_likelihood_x,
+    X = X,
+    y = y,
+    method = "Nelder-Mead",
+    control = list(maxit = 1000)
+  )
+  
+  beta_hat <- fit$par
+  loglik <- -fit$value
+  
+  # Compute Hessian and standard errors
+  #H <- numDeriv::hessian(func = cpn_regression_neg_log_likelihood, x = beta_hat, X = X, y = y)
+  H <- hessian_fd(func = cpn_regression_neg_log_likelihood, x = beta_hat, X = X, y = y)
+  # H <- hessian_fd_nosym(func = cpn_regression_neg_log_likelihood, x = beta_hat, X = X, y = y)
+  if (any(is.na(H)) || det(H) == 0 || any(!is.finite(H))) {
+    warning("Hessian is singular or contains non-finite values; SEs are not available.")
+    se_hat <- rep(NA, length(beta_hat))
+  } else {
+    se_hat <- sqrt(diag(solve(H)))
+  }
+  
+  
+  param_names <- c(colnames(X), "mu", "sigma")
+  names(beta_hat) <- param_names
+  names(se_hat) <- param_names
+  
+  # # Print parameter estimates with SEs
+  # cat("Parameter estimates with standard errors:\n")
+  # print(data.frame(Estimate = beta_hat, SE = se_hat, row.names = param_names))
+  
+  # Compute fitted values (linear predictor)
+  eta <- as.vector(X %*% beta_hat[1:ncol(X)])
+  lambda_hat <- exp(eta)  # Poisson mean
+  mu_hat <- beta_hat["mu"]
+  sigma_hat <- beta_hat["sigma"]
+  
+  # Compute individual log-likelihood contributions
+  loglik_obs <- function(y_i, lambda_i) {
+    if (y_i == 0) {
+      log_p0 <- dpois(0, lambda_i)
+      return(log(log_p0))
+    } else {
+      # Convolution of Poisson and Normal (approximate): use numerical integration or approximation
+      # We'll use simplified approximation for residuals:
+      expected <- lambda_i * mu_hat
+      var <- lambda_i * sigma_hat^2
+      return(dnorm(y_i, mean = expected, sd = sqrt(var), log = TRUE))
+    }
+  }
+  
+  loglik_saturated <- function(y_i) {
+    # In saturated model, y_i is predicted perfectly → log-lik is 0 if Normal
+    # For residuals, we assume perfect fit implies maximum likelihood → return 0
+    return(0)
+  }
+  
+  dev_res <- numeric(length(y))
+  for (i in seq_along(y)) {
+    ll_hat <- loglik_obs(y[i], lambda_hat[i])
+    ll_sat <- loglik_saturated(y[i])
+    dev_res[i] <- sign(y[i] - lambda_hat[i] * mu_hat) * sqrt(2 * (ll_sat - ll_hat))
+  }
+  
+  # Null model (intercept only)
+  X_null <- matrix(1, nrow = nrow(X), ncol = 1)
+  colnames(X_null) <- "(Intercept)"
+  null_fit <- optim(
+    par = c(0, mu_init, sigma_init),
+    fn = cpn_regression_neg_log_likelihood_x,
+    X = X_null,
+    y = y,
+    method = "Nelder-Mead",
+    control = list(maxit = 1000)
+  )
+  null_loglik <- -null_fit$value
+  
+  null_deviance <- -2 * null_loglik
+  residual_deviance <- -2 * loglik
+  df_null <- length(y) - 1
+  df_residual <- length(y) - length(beta_hat)
+  
+  # AIC: -2 * log-likelihood + 2 * number of parameters
+  k <- length(beta_hat)
+  aic_val <- 2 * k + 2 * fit$value  # equivalent to -2 * loglik + 2k
+  
+  model_frame <- model.frame(formula, data)
+  terms_obj <- terms(model_frame)
+  
+  # Add to returned list
+  structure(list(
+    coefficients = setNames(beta_hat[1:ncol(X)], colnames(X)),
+    mu = beta_hat["mu"],
+    sigma = beta_hat["sigma"],
+    se = se_hat,
+    model = model_frame,
+    terms = terms_obj,
+    formula = formula,
+    data = data,
+    deviance_residuals = dev_res,
+    fitted_values = lambda_hat * mu_hat,
+    neg_log_likelihood = fit$value,
+    null_deviance = null_deviance,
+    residual_deviance = residual_deviance,
+    df_null = df_null,
+    df_residual = df_residual,
+    aic = aic_val,
+    call = match.call()
+  ), class = "cpn")
+}
+
+
+profvis({
+  fit_cpn_x <- cpn_x((res/20)~group, data=df_PS_CIC24)
+})
+
+summary()
+###########################
+# Only STOMA  at Week 24  #
+#########################@@
+
+ps_data1 <-  adpssample$CHG[adpssample$TRT01P=="PLACEBO" & adpssample$PTTYPE=="STOMA"] # Generate 1000 observations from a Compound Poisson-Normal distribution
+ps_data2 <- adpssample$CHG[adpssample$TRT01P=="APRAGLUTIDE" & adpssample$PTTYPE=="STOMA"]  # Generate 1000 observations from a Compound Poisson-Normal distribution
+
+
+mle_estimates1 <- cpn_mle(ps_data1)$parameters  # Estimate lambda, mu, and sigma using MLE
+
+cat("Estimated lambda:", mle_estimates1[1], "\n")
+cat("Estimated mu:", mle_estimates1[2], "\n")
+cat("Estimated sigma:", mle_estimates1[3], "\n")
+cat("Estimated mean:", mle_estimates1[1] * mle_estimates1[2], "\n")
+
+mean(ps_data1)
+
+mle_estimates2 <- cpn_mle(ps_data2)$parameters  # Estimate lambda, mu, and sigma using MLE
+
+cat("Estimated lambda:", mle_estimates2[1], "\n")
+cat("Estimated mu:", mle_estimates2[2], "\n")
+cat("Estimated sigma:", mle_estimates2[3], "\n")
+cat("Estimated mean:", mle_estimates2[1] * mle_estimates2[2], "\n")
+
+mean(ps_data2)
+
+# Combine data and group labels
+ps_data_pooled <- c(ps_data1, ps_data2)
+group <- factor(c(rep(1,length(ps_data1)),rep(2,length(ps_data2)) ))
+
+
+
+# --- Null Model: shared lambda, mu and sigma ---
+logL_null <- cpn_mle(ps_data_pooled)$logLik
+
+# --- Alternative Model: different lambdas, shared mu and sigma ---
+logL_alt <- cpn_alternative_model(ps_data_pooled, group)$logLik 
+
+# --- LRT ---
+lrt_stat <- 2 * (logL_alt - logL_null)
+p_value <- pchisq(lrt_stat, df = 1, lower.tail = FALSE)
+
+# Output
+cat("Log-likelihood (Null):", logL_null, "\n")
+cat("Log-likelihood (Alt):", logL_alt, "\n")
+cat("LRT Statistic:", lrt_stat, "\n")
+cat("p-value:", p_value, "\n")
+
+
+# Comparibg to t-test
+# T-test expected to show a higher p-value
+t.test(ps_data1, ps_data2)
+
+rm(ps_data1, ps_data2, ps_data_pooled, logL_alt, logL_null)
+
+#########################
+# Only CIC  at Week 48  #
+#########################
+
+nVisit48 = length(na.omit(unique(adps$AVISITN[adps$AVISITN <= 48 & adps$AVISITN > 0])))
+
+nVisit48
+
+adps_filtered_CIC48 <-  adps[adps$PARAMCD == "WKPSVOL" & 
+                               adps$FASFL == "Y" & 
+                               adps$ANL03FL == "Y" & 
+                               adps$PTTYPE =="CIC" &
+                               !is.na(adps$CHG) &
+                               adps$AVISITN== 48, ]
+
+# Calculate the mean and standard deviation by treatment (trt01P)
+summary_stats <- adps_filtered_CIC48%>%
+  group_by(TRT01P) %>%
+  summarise(
+    Mean = mean(CHG, na.rm = TRUE),
+    SE = sd(CHG, na.rm = TRUE) / sqrt(n()),
+    n = n()
+  )
+
+# View the summary statistics
+print(summary_stats)
+
+
+
+ps_data1 <- adps_filtered_CIC48$CHG[adps_filtered_CIC48$TRT01P=="PLACEBO" ]
+ps_data2 <- adps_filtered_CIC48$CHG[adps_filtered_CIC48$TRT01P=="APRAGLUTIDE"] 
+
+
+mle_estimates1 <- cpn_mle(ps_data1)$parameters 
+
+cat("Estimated lambda:", mle_estimates1[1], "\n")
+cat("Estimated mu:", mle_estimates1[2], "\n")
+cat("Estimated sigma:", mle_estimates1[3], "\n")
+cat("Estimated mean:", mle_estimates1[1] * mle_estimates1[2], "\n")
+
+mean(ps_data1)
+
+mle_estimates2 <- cpn_mle(ps_data2)$parameters  # Estimate lambda, mu, and sigma using MLE
+
+cat("Estimated lambda:", mle_estimates2[1], "\n")
+cat("Estimated mu:", mle_estimates2[2], "\n")
+cat("Estimated sigma:", mle_estimates2[3], "\n")
+cat("Estimated mean:", mle_estimates2[1] * mle_estimates2[2], "\n")
+
+mean(ps_data2)
+
+
+# Combine data and group labels
+ps_data_pooled <- c(ps_data1, ps_data2)
+group <- factor(c(rep(1,length(ps_data1)),rep(2,length(ps_data2)) ))
+
+# --- Null Model: shared lambda, mu and sigma ---
+logL_null <- cpn_mle(ps_data_pooled)$logLik
+
+# --- Alternative Model: different lambdas, shared mu and sigma ---
+logL_alt <- cpn_alternative_model(ps_data_pooled, group)$logLik 
+
+# --- LRT ---
+lrt_stat <- 2 * (logL_alt - logL_null)
+p_value <- pchisq(lrt_stat, df = 1, lower.tail = FALSE)
+
+# Output
+cat("Log-likelihood (Null):", logL_null, "\n")
+cat("Log-likelihood (Alt):", logL_alt, "\n")
+cat("LRT Statistic:", lrt_stat, "\n")
+cat("p-value:", p_value, "\n")
+
+
+# Comparibg to t-test
+# T-test expected to show a higher p-value
+t.test(ps_data1, ps_data2)
+
+rm(ps_data1, ps_data2, ps_data_pooled, logL_alt, logL_null)
+######################################
+# Comparing CIC short remnant colon  at week 48 #
+######################################
+
+adps_filtered_CIC48S <-  adps[adps$PARAMCD == "WKPSVOL" & 
+                               adps$FASFL == "Y" & 
+                               adps$ANL03FL == "Y" & 
+                               adps$PTTYPE =="CIC" &
+                               !is.na(adps$CHG) &
+                               adps$AVISITN == 48 & 
+                               adps$RMCLGR1 != ">= 57%" , ]
+
+
+# Calculate the mean and standard deviation by treatment (trt01P)
+summary_stats <- adps_filtered_CIC48S%>%
+  group_by(TRT01P) %>%
+  summarise(
+    Mean = mean(CHG, na.rm = TRUE),
+    SE = sd(CHG, na.rm = TRUE) / sqrt(n()),
+    n = n()
+  )
+
+# View the summary statistics
+print(summary_stats)
+
+
+
+ps_data1 <- adps_filtered_CIC48S$CHG[adps_filtered_CIC48S$TRT01P=="PLACEBO" ]
+ps_data2 <- adps_filtered_CIC48S$CHG[adps_filtered_CIC48S$TRT01P=="APRAGLUTIDE"] 
+
+
+mle_estimates1 <- cpn_mle(ps_data1)$parameters 
+
+cat("Estimated lambda:", mle_estimates1[1], "\n")
+cat("Estimated mu:", mle_estimates1[2], "\n")
+cat("Estimated sigma:", mle_estimates1[3], "\n")
+cat("Estimated mean:", mle_estimates1[1] * mle_estimates1[2], "\n")
+
+mean(ps_data1)
+
+mle_estimates2 <- cpn_mle(ps_data2)$parameters  # Estimate lambda, mu, and sigma using MLE
+
+cat("Estimated lambda:", mle_estimates2[1], "\n")
+cat("Estimated mu:", mle_estimates2[2], "\n")
+cat("Estimated sigma:", mle_estimates2[3], "\n")
+cat("Estimated mean:", mle_estimates2[1] * mle_estimates2[2], "\n")
+
+mean(ps_data2)
+
+
+# Combine data and group labels
+ps_data_pooled <- c(ps_data1, ps_data2)
+group <- factor(c(rep(1,length(ps_data1)),rep(2,length(ps_data2)) ))
+
+# --- Null Model: shared lambda, mu and sigma ---
+logL_null <- cpn_mle(ps_data_pooled)$logLik
+
+# --- Alternative Model: different lambdas, shared mu and sigma ---
+logL_alt <- cpn_alternative_model(ps_data_pooled, group)$logLik 
+
+# --- LRT ---
+lrt_stat <- 2 * (logL_alt - logL_null)
+p_value <- pchisq(lrt_stat, df = 1, lower.tail = FALSE)
+
+# Output
+cat("Log-likelihood (Null):", logL_null, "\n")
+cat("Log-likelihood (Alt):", logL_alt, "\n")
+cat("LRT Statistic:", lrt_stat, "\n")
+cat("p-value:", p_value, "\n")
+
+
+# Comparibg to t-test
+# T-test expected to show a higher p-value
+t.test(ps_data1, ps_data2)
+
+rm(ps_data1, ps_data2, ps_data_pooled, logL_alt, logL_null)
+
+
+################################################
+# Comparing CIC long remnant colon  at week 48 #
+################################################
+
+adps_filtered_CIC48L <-  adps[adps$PARAMCD == "WKPSVOL" & 
+                                adps$FASFL == "Y" & 
+                                adps$ANL03FL == "Y" & 
+                                adps$PTTYPE =="CIC" &
+                                !is.na(adps$CHG) &
+                                adps$AVISITN == 48 & 
+                                adps$RMCLGR1 == ">= 57%" , ]
+
+
+# Calculate the mean and standard deviation by treatment (trt01P)
+summary_stats <- adps_filtered_CIC48L%>%
+  group_by(TRT01P) %>%
+  summarise(
+    Mean = mean(CHG, na.rm = TRUE),
+    SE = sd(CHG, na.rm = TRUE) / sqrt(n()),
+    n = n()
+  )
+
+# View the summary statistics
+print(summary_stats)
+
+
+
+ps_data1 <- adps_filtered_CIC48L$CHG[adps_filtered_CIC48L$TRT01P=="PLACEBO" ]
+ps_data2 <- adps_filtered_CIC48L$CHG[adps_filtered_CIC48L$TRT01P=="APRAGLUTIDE"] 
+
+
+mle_estimates1 <- cpn_mle(ps_data1)$parameters 
+
+cat("Estimated lambda:", mle_estimates1[1], "\n")
+cat("Estimated mu:", mle_estimates1[2], "\n")
+cat("Estimated sigma:", mle_estimates1[3], "\n")
+cat("Estimated mean:", mle_estimates1[1] * mle_estimates1[2], "\n")
+
+mean(ps_data1)
+
+mle_estimates2 <- cpn_mle(ps_data2)$parameters  # Estimate lambda, mu, and sigma using MLE
+
+cat("Estimated lambda:", mle_estimates2[1], "\n")
+cat("Estimated mu:", mle_estimates2[2], "\n")
+cat("Estimated sigma:", mle_estimates2[3], "\n")
+cat("Estimated mean:", mle_estimates2[1] * mle_estimates2[2], "\n")
+
+mean(ps_data2)
+
+
+# Combine data and group labels
+ps_data_pooled <- c(ps_data1, ps_data2)
+group <- factor(c(rep(1,length(ps_data1)),rep(2,length(ps_data2)) ))
+
+# --- Null Model: shared lambda, mu and sigma ---
+logL_null <- cpn_mle(ps_data_pooled)$logLik
+
+# --- Alternative Model: different lambdas, shared mu and sigma ---
+logL_alt <- cpn_alternative_model(ps_data_pooled, group)$logLik 
+
+# --- LRT ---
+lrt_stat <- 2 * (logL_alt - logL_null)
+p_value <- pchisq(lrt_stat, df = 1, lower.tail = FALSE)
+
+# Output
+cat("Log-likelihood (Null):", logL_null, "\n")
+cat("Log-likelihood (Alt):", logL_alt, "\n")
+cat("LRT Statistic:", lrt_stat, "\n")
+cat("p-value:", p_value, "\n")
+
+
+# Comparibg to t-test
+# T-test expected to show a higher p-value
+t.test(ps_data1, ps_data2)
+
+
+profvis({
+  fit_cpn_x <- cpn_x((res/20)~group, data=df_PS_CIC24)
+})

@@ -1,0 +1,72 @@
+#' Negative Log-Likelihood for Compound Poisson-Normal (CPN) Regression
+#'
+#' Computes the negative log-likelihood of a regression model where the response variable
+#' follows a Compound Poisson-Normal (CPN) distribution. The Poisson rate parameter \code{lambda}
+#' is modeled via a log-linear regression on covariates, and the normal components share a
+#' common mean \code{mu} and standard deviation \code{sigma}.
+#'
+#' @param beta_mu_sigma Numeric vector. The parameter vector consisting of:
+#'   \itemize{
+#'     \item Regression coefficients \code{beta} for modeling \code{lambda} (length = \code{ncol(X)})
+#'     \item Scalar mean \code{mu} of the normal components
+#'     \item Scalar standard deviation \code{sigma} of the normal components
+#'   }
+#' @param X Numeric matrix of covariates, with one row per observation.
+#' @param y Numeric vector of response values, assumed to follow a CPN distribution.
+#'
+#' @return The negative log-likelihood (scalar). Returns \code{Inf} if \code{sigma <= 0} or
+#' if any observation has a likelihood of zero (to avoid \code{log(0)}).
+#'
+#' @details
+#' The model assumes that the response \code{y} is a sum of a Poisson-distributed number
+#' of i.i.d. normal variables. The Poisson intensity is linked to predictors via
+#' \code{lambda_i = exp(X %*% beta)}. The likelihood is truncated by computing a finite sum
+#' over a range of \code{k} values up to \code{Kmax}.
+
+#'
+#' @examples
+#' set.seed(123)
+#' X <- matrix(rnorm(20), ncol = 2)
+#' y <- rpois(10, lambda = exp(X %*% c(0.5, -0.3))) * 2 + rnorm(10, 0, 1)
+#' params <- c(0.5, -0.3, 2, 1)
+#' cpn_regression_neg_log_likelihood(params, X, y)
+#'
+#' @export
+cpn_regression_neg_log_likelihood <- function(beta_mu_sigma, X, y, Kmax=10) {
+
+  # Extract parameters
+  p <- ncol(X)
+  beta <- beta_mu_sigma[1:p]        # Regression coefficients for lambda
+  mu <- beta_mu_sigma[p + 1]        # Mean of normal components
+  sigma <- beta_mu_sigma[p + 2]     # Std dev of normal components
+
+  if (sigma <= 0) return(Inf)       # Penalize invalid sigma
+
+  # Linear predictor for lambda (log-link)
+  eta <- X %*% beta
+  lambda_vec <- as.vector(exp(eta))  # Observation-specific lambda
+
+  # Determine a maximum K across all lambda (for truncation)
+  #Kmax <- find_Kmax(max(lambda_vec))
+
+  # Compute likelihood for each observation
+  likelihoods <- mapply(function(x_i, lambda_i) {
+
+    if (x_i == 0) {
+      prob <- stats::dpois(0, lambda_i)
+    } else {
+      k_vals <- 1:Kmax
+      poisson_probs <- stats::dpois(k_vals, lambda_i)
+      normal_probs <- stats::dnorm(x_i, mean = k_vals * mu, sd = sqrt(k_vals * sigma^2))
+      prob <- sum(poisson_probs * normal_probs)
+    }
+
+    return(prob)
+
+  }, y, lambda_vec)
+
+  # If any likelihood is 0 (log(0) = -Inf), return Inf for the negative log-likelihood
+  if (any(likelihoods <= 0)) return(Inf)
+
+  return(-sum(log(likelihoods)))
+}

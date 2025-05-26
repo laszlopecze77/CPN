@@ -1,0 +1,146 @@
+#' Analysis of Deviance for CPN Models
+#'
+#' Computes an analysis of deviance table for objects of class `cpn`, either:
+#' (1) sequentially by model terms (Type I ANOVA) when one model is supplied, or
+#' (2) by comparing two or more nested models.
+#'
+#' @param object An object of class `cpn`, typically the result of a call to [cpn()].
+#' @param ... Optional additional objects of class `cpn` for model comparison.
+#' @param test A character string specifying the test statistic. Currently only `"Chisq"` is supported.
+#'
+#' @return An object of class `"anova"` inheriting from `"data.frame"`, containing:
+#'   - If one model is provided: sequential deviance table by added terms.
+#'   - If multiple models are provided: deviance comparison between models.
+#'
+#' @details
+#' When a single model is supplied, this function refits the model with terms
+#' added sequentially and reports the change in residual deviance.
+#'
+#' When multiple models are supplied, they are assumed to be nested and ordered
+#' by increasing complexity (based on residual degrees of freedom). The function
+#' then compares their deviances using chi-squared tests.
+#'
+#' @examples
+#' \dontrun{
+#' # Sequential analysis of deviance
+#' fit <- cpn(y ~ x1 + x2, data = dat)
+#' anova(fit)
+#'
+#' # Model comparison
+#' fit1 <- cpn(y ~ x1, data = dat)
+#' fit2 <- cpn(y ~ x1 + x2, data = dat)
+#' anova(fit1, fit2)
+#' }
+#'
+#' @export
+anova.cpn <- function(object, ..., test = "Chisq") {
+  more_models <- list(...)
+
+  # If additional models are provided: compare multiple CPN fits
+  if (length(more_models) > 0) {
+    models <- c(list(object), more_models)
+
+    # Check all inputs are of class "cpn"
+    if (!all(sapply(models, inherits, "cpn"))) {
+      stop("All inputs must be of class 'cpn'")
+    }
+
+    # Extract and order by residual df (increasing model complexity)
+    df_res <- sapply(models, function(m) m$df_residual)
+    dev <- sapply(models, function(m) m$residual_deviance)
+    n_models <- length(models)
+
+    ord <- order(df_res)
+    models <- models[ord]
+    df_res <- df_res[ord]
+    dev <- dev[ord]
+
+    # Compute differences and p-values
+    df_diff <- c(NA, diff(df_res))
+    dev_diff <- c(NA, diff(dev))
+    p_vals <- c(NA, stats::pchisq(dev_diff[-1], df_diff[-1], lower.tail = FALSE))
+
+    # Build comparison table
+    result <- data.frame(
+      Model = paste0("Model ", seq_len(n_models)),
+      Residual_Df = df_res,
+      Residual_Deviance = dev,
+      Df = df_diff,
+      Deviance = dev_diff,
+      `Pr(>Chi)` = p_vals,
+      check.names = FALSE
+    )
+
+    class(result) <- c("anova", "data.frame")
+    return(result)
+
+  } else {
+    # Single-model mode: sequential deviance table by term
+    full_formula <- stats::formula(object)
+    terms_obj <- stats::terms(object)
+    term_labels <- attr(terms_obj, "term.labels")
+
+    if (length(term_labels) == 0) {
+      warning("Model contains only an intercept. No terms to test.")
+      return(invisible(NULL))
+    }
+
+    response <- as.character(attr(terms_obj, "variables"))[2]
+    data <- object$data
+
+    # Intercept-only model
+    null_formula <- stats::as.formula(paste(response, "~ 1"))
+    fit_prev <- cpn(null_formula, data = data)
+    dev_prev <- fit_prev$residual_deviance
+    df_prev <- fit_prev$df_residual
+
+    rows <- list()
+    rows[[1]] <- list(Term = "(Intercept)", Df = NA, Deviance = NA,
+                      `Resid. Df` = df_prev, `Resid. Dev` = dev_prev, `Pr(>Chi)` = NA)
+
+    for (i in seq_along(term_labels)) {
+      term <- term_labels[i]
+      current_formula <- as.formula(paste(response, "~", paste(term_labels[1:i], collapse = " + ")))
+      fit_curr <- cpn(current_formula, data = data)
+
+      dev_curr <- fit_curr$residual_deviance
+      df_curr <- fit_curr$df_residual
+
+      df_diff <- df_prev - df_curr
+      dev_diff <- dev_prev - dev_curr
+      p_val <- if (!is.na(df_diff) && df_diff > 0) {
+        pchisq(dev_diff, df = df_diff, lower.tail = FALSE)
+      } else {
+        NA
+      }
+
+      rows[[i + 1]] <- list(Term = term, Df = df_diff, Deviance = dev_diff,
+                            `Resid. Df` = df_curr, `Resid. Dev` = dev_curr, `Pr(>Chi)` = p_val)
+
+      dev_prev <- dev_curr
+      df_prev <- df_curr
+    }
+
+    anova_df <- do.call(rbind, lapply(rows, as.data.frame))
+    rownames(anova_df) <- NULL
+    class(anova_df) <- c("anova", "data.frame")
+    return(anova_df)
+  }
+}
+
+#' @export
+print.anova.cpn <- function(x, digits = max(4, getOption("digits") - 2), ...) {
+  if (!("Term" %in% names(x))) {
+    print.data.frame(x, digits = digits, ...)
+  } else {
+    signif_stars <- symnum(x$`Pr(>Chi)`,
+                           corr = FALSE, na = FALSE,
+                           cutpoints = c(0, 0.001, 0.01, 0.05, 0.1, 1),
+                           symbols = c("***", "**", "*", ".", " "))
+    out <- cbind(x, Signif = signif_stars)
+    print.data.frame(out, digits = digits, row.names = FALSE, ...)
+    cat("---\n")
+    cat("Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1\n")
+  }
+  invisible(x)
+}

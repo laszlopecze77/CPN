@@ -1,0 +1,171 @@
+# Load packages
+library(haven)
+library(dplyr)
+
+
+
+####################
+# Import datasets  #
+####################
+
+adps <- read_xpt("/data/ta799-007-fa/cdisc/11_adam_xpt/adps.xpt")
+adsl <- read_xpt("/data/ta799-007-fa/cdisc/11_adam_xpt/adsl.xpt")
+
+# Subsetting the data based on the conditions in the SAS code
+adps_filtered <- adps[adps$PARAMCD == "WKPSVOL" & 
+                        adps$FASFL == "Y" & 
+                        adps$ANL03FL == "Y", ]
+
+
+nVisit24 = length(na.omit(unique(adps$AVISITN[adps$AVISITN <= 24 & adps$AVISITN > 0])))
+nVisit24
+
+adpssample <-  adps_filtered[!is.na(adps_filtered$CHG) &
+                               adps_filtered$AVISITN== 24, ]
+
+
+# Calculate the mean and standard deviation by treatment (trt01P)
+summary_stats <- adpssample %>%
+  group_by(TRT01P) %>%
+  summarise(
+    Mean = mean(CHG, na.rm = TRUE),
+    SE = sd(CHG, na.rm = TRUE) / sqrt(n())
+  )
+
+# View the summary statistics
+print(summary_stats)
+
+
+df_PS <- data.frame(res=adpssample$CHG,
+                    group=adpssample$TRT01P)
+
+
+fit_cpn <- cpn((res)~group, data=df_PS)
+
+summary(fit_cpn)
+
+
+
+
+#########################
+# Only CIC  at Week 24  #
+#########################
+
+df_PS_CIC24 <- data.frame(res=adpssample$CHG[adpssample$PTTYPE=="CIC"] ,
+                    group=adpssample$TRT01P[adpssample$PTTYPE=="CIC"])
+
+fit_cpn <- cpn(res~group, data=df_PS_CIC24, Kmax=200)
+summary(fit_cpn)
+
+
+
+###########################
+# Only STOMA  at Week 24  #
+#########################@@
+
+df_PS_STOMA24 <- data.frame(res=adpssample$CHG[adpssample$PTTYPE=="STOMA"] ,
+                          group=adpssample$TRT01P[adpssample$PTTYPE=="STOMA"])
+
+fit_cpn <- cpn(res~group, data=df_PS_STOMA24, Kmax=200)
+summary(fit_cpn)
+
+#########################
+# Only CIC  at Week 48  #
+#########################
+
+adps_filtered_CIC48 <-  adps[adps$PARAMCD == "WKPSVOL" & 
+                               adps$FASFL == "Y" & 
+                               adps$ANL03FL == "Y" & 
+                               adps$PTTYPE =="CIC" &
+                               !is.na(adps$CHG) &
+                               adps$AVISITN== 48, ]
+
+names(adps_filtered_CIC48)
+names(adsl)
+merged <- merge(adps_filtered_CIC48, adsl["USUBJID","RMCOLCNT" ])
+
+df_PS_CIC48 <- data.frame(res=adps_filtered_CIC48$CHG ,
+                          group=adps_filtered_CIC48$TRT01P,
+                         bl=adps_filtered_CIC48$BASE)
+
+fit_cpn <- cpn(res~group, data=df_PS_CIC48, Kmax=20)
+summary(fit_cpn)
+
+fit_cpn <- cpn(res~group + bl, data=df_PS_CIC48, Kmax=20)
+summary(fit_cpn)
+
+fit_cpn <- cpn(res~group + bl, data=df_PS_CIC48, Kmax=20)
+summary(fit_cpn)
+
+fit_cpn <- cpn(res~group + bl, data=df_PS_CIC48, Kmax=20)
+summary(fit_cpn)
+
+# Calculate the mean and standard deviation by treatment (trt01P)
+summary_stats <- adps_filtered_CIC48%>%
+  group_by(TRT01P) %>%
+  summarise(
+    Mean = mean(CHG, na.rm = TRUE),
+    SE = sd(CHG, na.rm = TRUE) / sqrt(n()),
+    n = n()
+  )
+
+# View the summary statistics
+print(summary_stats)
+
+###########################
+# Only STOMA  at Week 24  #
+#########################@@
+names(adpssample)
+unique(adpssample$RMCLGR1)
+df_PS_STOMACIC24 <- data.frame(
+  res = adpssample$CHG[adpssample$PTTYPE == "STOMA" |
+                         (adpssample$PTTYPE == "CIC" & adpssample$RMCLGR1 != ">= 57%")],
+  group = adpssample$TRT01P[adpssample$PTTYPE == "STOMA" |
+                              (adpssample$PTTYPE == "CIC" & adpssample$RMCLGR1 != ">= 57%")]
+)
+
+fit_cpn <- cpn(res~group, data=df_PS_STOMACIC24, Kmax=200)
+summary(fit_cpn)
+
+# Split the dataset by treatment group
+df_placebo <- subset(df_PS_STOMACIC24, group == "PLACEBO")
+df_ctr     <- subset(df_PS_STOMACIC24, group != "PLACEBO") 
+
+# Sample 40 patients with replacement from each group
+boot_placebo <- df_placebo[sample(nrow(df_placebo), 40, replace = TRUE), ]
+boot_ctr     <- df_ctr[sample(nrow(df_ctr), 40, replace = TRUE), ]
+
+# Combine the bootstrapped samples
+boot_sample <- rbind(boot_placebo, boot_ctr)
+
+
+
+tt_p_value <- NULL
+p_value <- NULL
+
+for (i in 1:100){
+  set.seed(123 + i)  # Set seed for reproducibility
+  # Split the dataset by treatment group
+  df_placebo <- subset(df_PS_STOMACIC24, group == "PLACEBO")
+  df_ctr     <- subset(df_PS_STOMACIC24, group != "PLACEBO") 
+  
+  # Sample 40 patients with replacement from each group
+  boot_placebo <- df_placebo[sample(nrow(df_placebo), 60, replace = TRUE), ]
+  boot_ctr     <- df_ctr[sample(nrow(df_ctr), 60, replace = TRUE), ]
+  
+  # Combine the bootstrapped samples
+  boot_sample <- rbind(boot_placebo, boot_ctr)
+  
+  fit <- cpn(res ~ group, data = boot_sample)
+  
+  tt_p_value[i] <- t.test(res ~ group, data = boot_sample)$p.value
+  
+  
+  p_value[i] <- summary(fit)$summary_table[2, 4]
+  
+  print(i)
+}
+
+
+sum(tt_p_value < 0.05)/length(tt_p_value)
+sum(p_value < 0.05)/length(p_value)

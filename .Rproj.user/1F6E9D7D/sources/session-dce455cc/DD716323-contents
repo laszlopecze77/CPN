@@ -1,0 +1,176 @@
+# Load packages
+library(ggplot2)
+simulate_cpn <- function(n, lambda, mu, sigma) {
+  counts <- rpois(n, lambda)  # Draw the number of events (k) for each of the n observations from a Poisson distribution
+  data <- sapply(counts, function(k) sum(rnorm(k, mean = mu, sd = sigma)))  # For each k, simulate k independent normal variables and sum them
+  return(data)  # Return the vector of compound outcomes
+}
+
+tt_p_value <- NULL
+p_value <- NULL
+pop_zero <- NULL
+pop_sd <- NULL
+pop_mean <- NULL
+
+for (i in 1:1000){
+  set.seed(123 + i)  # Set seed for reproducibility
+  sim_data1 <- simulate_cpn(n = 40, lambda = 0.9785, mu = -1523, sigma = 1575)  # Generate 1000 observations from a Compound Poisson-Normal distribution
+  sim_data2 <- simulate_cpn(n = 40, lambda = 1.75, mu = -1646, sigma = 1980)  # Generate 1000 observations from a Compound Poisson-Normal distribution
+  
+  # Combine data and group labels
+  sim_data_pooled <- c(sim_data1, sim_data2)
+  group <- factor(c(rep(1, length(sim_data1)), rep(2, length(sim_data2))))
+  
+  df1 <- data.frame(res=sim_data_pooled,
+                    group=group)
+  
+  fit <- cpn(res ~ group, data = df1)
+  
+  tt_p_value[i] <- t.test(res ~ group, data = df1)$p.value
+  
+  
+  p_value[i] <- summary(fit)$summary_table[2, 4]
+  pop_zero[i] <- sum(df1$res==0)
+  pop_sd[i] <- sd(df1$res)
+  pop_mean[i] <- mean(df1$res)
+  
+  print(i)
+}
+
+
+sum(tt_p_value < 0.05)/length(tt_p_value)
+sum(p_value < 0.05)/length(p_value)
+
+
+tt_p_value <- NULL
+p_value <- NULL
+pop_zero <- NULL
+pop_sd <- NULL
+pop_mean <- NULL
+
+for (i in 1:100){
+  set.seed(123 + i)  # Set seed for reproducibility
+  sim_data1 <- simulate_cpn(n = 35, lambda = 0.9785, mu = -1523, sigma = 1575)  # Generate 1000 observations from a Compound Poisson-Normal distribution
+  sim_data2 <- simulate_cpn(n = 35, lambda = 2, mu = -1646, sigma = 1980)  # Generate 1000 observations from a Compound Poisson-Normal distribution
+  
+  # Combine data and group labels
+  sim_data_pooled <- c(sim_data1, sim_data2)
+  group <- factor(c(rep(1, length(sim_data1)), rep(2, length(sim_data2))))
+  
+  df1 <- data.frame(res=sim_data_pooled,
+                    group=group)
+  
+  fit <- cpn(res ~ group, data = df1)
+  
+  tt_p_value[i] <- t.test(res ~ group, data = df1)$p.value
+  
+  
+  p_value[i] <- summary(fit)$summary_table[2, 4]
+  pop_zero[i] <- sum(df1$res==0)
+  pop_sd[i] <- sd(df1$res)
+  pop_mean[i] <- mean(df1$res)
+  
+  print(i)
+}
+
+
+sum(tt_p_value < 0.05)/length(tt_p_value)
+sum(p_value < 0.05)/length(p_value)
+
+sum(tt_p_value > p_value)
+sum(p_value > tt_p_value)
+
+
+
+cor(p_value, pop_zero, method = c("spearman"))
+
+
+
+# Assuming p_value and pop_zero are vectors of the same length
+df <- data.frame(p_value = log(p_value), pop_zero = pop_zero)
+
+ggplot(df, aes(x = p_value, y = pop_zero)) +
+  geom_point(alpha = 0.6) +
+  geom_smooth(method = "loess", se = FALSE, color = "blue") +
+  labs(
+    title = "Spearman Correlation between p_value and pop_zero",
+    subtitle = paste("Spearman rho =", round(cor(df$p_value, df$pop_zero, method = "spearman"), 3)),
+    x = "p_value",
+    y = "pop_zero"
+  ) +
+  theme_minimal()
+cor(p_value, pop_sd, method = c("spearman"))
+
+
+
+
+# Assuming p_value and pop_sd are vectors of the same length
+df <- data.frame(p_value = log(p_value), pop_sd = pop_sd)
+
+ggplot(df, aes(x = p_value, y = pop_sd)) +
+  geom_point(alpha = 0.6) +
+  geom_smooth(method = "loess", se = FALSE, color = "blue") +
+  labs(
+    title = "Spearman Correlation between log(p_value) and pop_sd",
+    subtitle = paste("Spearman rho =", round(cor(df$p_value, df$pop_sd, method = "spearman"), 3)),
+    x = "log(p_value)",
+    y = "pop_sd"
+  ) +
+  theme_minimal()
+
+# Assuming p_value and pop_zero are vectors of the same length
+df <- data.frame(p_value = log(p_value), pop_mean = pop_mean)
+
+ggplot(df, aes(x = p_value, y = pop_mean)) +
+  geom_point(alpha = 0.6) +
+  geom_smooth(method = "loess", se = FALSE, color = "blue") +
+  labs(
+    title = "Spearman Correlation between p_value and pop_mean",
+    subtitle = paste("Spearman rho =", round(cor(df$p_value, df$pop_mean, method = "spearman"), 3)),
+    x = "p_value",
+    y = "pop_mean"
+  ) +
+  theme_minimal()
+
+
+
+
+
+
+# Example 2 ----------------------------------------------------------------------------------------------------------------------------------------------------
+set.seed(123456)
+sim_data1 <- simulate_cpn(n = 40, lambda = 0.8, mu = -1523, sigma = 1575)  # Generate 1000 observations from a Compound Poisson-Normal distribution
+sim_data2 <- simulate_cpn(n = 40, lambda = 2, mu = -1646, sigma = 1980)  # Generate 1000 observations from a Compound Poisson-Normal distribution
+
+# Combine data and group labels
+sim_data_pooled <- c(sim_data1, sim_data2)
+group <- factor(c(rep("Control", length(sim_data1)), rep("Treated", length(sim_data2))))
+
+df1 <- data.frame(res=sim_data_pooled,
+                  group=group)
+
+ggplot(df1, aes(x = group, y = res, fill = group)) +
+  geom_violin(trim = FALSE, alpha = 0.6) +  # Violin plot with full tails
+  geom_jitter(width = 0.2, height = 0, size = 1.5, alpha = 0.5) +  # Jittered points
+  stat_summary(fun = mean, geom = "point", shape = 23, size = 4,
+               fill = "yellow", color = "black", stroke = 0.5) +  # Yellow rhombus
+  labs(title = "Parenteral Support (PS) at Week 24 ",
+       x = "Group", y = "PS volume Change from Baseline") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+# Filter Control group only
+df_control <- subset(df1, group == "Control")
+
+
+sum(df_control$res==0)
+
+
+fit <- cpn(res ~ group, data = df1)
+summary(fit)$summary_table[2,4]
+
+t.test(res ~ group, data = df1)
+
+ t.test(res ~ group, data = df1)$p.value
+
+

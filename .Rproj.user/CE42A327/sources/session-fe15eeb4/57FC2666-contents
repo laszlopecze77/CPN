@@ -1,0 +1,52 @@
+#' Numerical Hessian Matrix via Central Differences
+#'
+#' Approximates the Hessian matrix of a scalar-valued function using central finite differences.
+#' Suitable for moderately sized problems where analytical second derivatives are unavailable.
+#'
+#' @param func A function that takes a numeric vector and returns a scalar value.
+#' @param x Numeric vector. The point at which the Hessian is evaluated.
+#' @param ... Additional arguments passed to \code{func}.
+#' @param eps Numeric. Perturbation size for finite differences (default is 1e-5).
+#'
+#' @return A symmetric matrix representing the approximate Hessian of \code{func} at \code{x}.
+#'
+#' @examples
+#' f <- function(x) sum(x^2)
+#' hessian_fd(f, c(1, 2))  # Should return a diagonal matrix with 2s
+#'
+#' @export
+
+
+
+hessian_fd <- function(func, x, ..., eps = 1e-5) {
+  n <- length(x)
+  H <- matrix(0, n, n)
+  fx <- func(x, ...)
+
+  for (i in 1:n) {
+    for (j in i:n) {
+      x_ij_pp <- x_ij_pm <- x_ij_mp <- x_ij_mm <- x
+
+      x_ij_pp[i] <- x_ij_pp[i] + eps
+      x_ij_pp[j] <- x_ij_pp[j] + eps
+
+      x_ij_pm[i] <- x_ij_pm[i] + eps
+      x_ij_pm[j] <- x_ij_pm[j] - eps
+
+      x_ij_mp[i] <- x_ij_mp[i] - eps
+      x_ij_mp[j] <- x_ij_mp[j] + eps
+
+      x_ij_mm[i] <- x_ij_mm[i] - eps
+      x_ij_mm[j] <- x_ij_mm[j] - eps
+
+      H[i, j] <- (func(x_ij_pp, ...) - func(x_ij_pm, ...) -
+                    func(x_ij_mp, ...) + func(x_ij_mm, ...)) / (4 * eps^2)
+
+      if (i != j) {
+        H[j, i] <- H[i, j]  # exploit symmetry
+      }
+    }
+  }
+
+  return(H)
+}

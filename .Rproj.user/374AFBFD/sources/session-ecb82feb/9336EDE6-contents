@@ -1,0 +1,189 @@
+#' Fit a Compound Poisson-Normal (CPN) Regression Model
+#'
+#' Fits a generalized regression model where the response is assumed to follow a
+#' Compound Poisson-Normal (CPN) distribution. The Poisson intensity is modeled via
+#' a log-link function with covariates.
+#'
+#' @param formula A formula specifying the regression model.
+#' @param data A data frame containing the variables in the model.
+#' @param mu_init Optional initial value for the normal component mean.
+#' @param sigma_init Optional initial value for the normal component standard deviation.
+#' @param epsilon Numeric. Tail probability threshold for Poisson truncation (default is 1e-6).
+#'
+#' @return An object of class \code{"cpn"} containing:
+#'   \item{coefficients}{Estimated regression coefficients for the Poisson component}
+#'   \item{mu, sigma}{Estimated normal component parameters}
+#'   \item{se}{Standard errors of all parameters}
+#'   \item{formula, data}{Input formula and data}
+#'   \item{fitted_values}{Fitted means of the CPN distribution}
+#'   \item{deviance_residuals}{Deviance residuals}
+#'   \item{null_deviance, residual_deviance}{Deviance statistics}
+#'   \item{df_null, df_residual}{Degrees of freedom for null and fitted model}
+#'   \item{aic}{Akaike Information Criterion value}
+#'   \item{neg_log_likelihood}{Value of the minimized negative log-likelihood}
+#'
+#'
+#' @details
+#' The CPN model treats each observation as a sum of a Poisson-distributed number of
+#' i.i.d. normal variables. This function fits the model using maximum likelihood,
+#' computes standard errors from the Hessian (via finite differences),
+#' and calculates diagnostics such as deviance and AIC.
+#'
+#' @seealso  \code{\link{cpn_regression_neg_log_likelihood}}
+#'
+#' @examples
+#' df <- data.frame(x1 = rnorm(100), x2 = runif(100))
+#' df$y <- rpois(100, lambda = exp(0.5 * df$x1 - 0.3 * df$x2)) * 2 + rnorm(100)
+#' model <- cpn(y ~ x1 + x2, data = df)
+#' summary(model)
+#'
+#' @export
+
+
+cpn <- function(formula, data, mu_init = NULL, sigma_init = NULL, epsilon = 1e-6, Kmax=10) {
+  # Ensure required package
+  if (!requireNamespace("numDeriv", quietly = TRUE)) {
+    stop("Package 'numDeriv' is required but not installed.")
+  }
+
+  # Build model frame and design matrix
+  mf <- model.frame(formula, data)
+  y <- model.response(mf)
+  X <- model.matrix(attr(mf, "terms"), data = mf)
+
+  # Initial values
+  y_nonzero <- y
+  if (is.null(mu_init)) mu_init <- mean(y_nonzero)
+  if (is.null(sigma_init)) sigma_init <- sd(y_nonzero)
+  init_beta <- rep(0, ncol(X))
+  init_vals <- c(init_beta, mu_init, sigma_init)
+
+  # Optimize negative log-likelihood
+  fit <- optim(
+    par = init_vals,
+    fn = cpn_regression_neg_log_likelihood,
+    X = X,
+    y = y,
+    Kmax = Kmax,
+    method = "Nelder-Mead",
+    control = list(maxit = 1000)
+  )
+
+  beta_hat <- fit$par
+  loglik <- -fit$value
+
+  # Compute Hessian and standard errors
+  # H <- numDeriv::hessian(func = cpn_regression_neg_log_likelihood, x = beta_hat, X = X, y = y)
+  #H <- hessian_fd(func = cpn_regression_neg_log_likelihood, x = beta_hat, X = X, y = y)
+
+  H <- tryCatch({
+    numDeriv::hessian(func = function(par) cpn_regression_neg_log_likelihood(par, X, y, Kmax = Kmax),
+                      x = beta_hat)
+  }, error = function(e) {
+    warning("Failed to compute Hessian: ", e$message)
+    return(matrix(NA, length(beta_hat), length(beta_hat)))
+  })
+
+  # H <- hessian_fd_nosym(func = cpn_regression_neg_log_likelihood, x = beta_hat, X = X, y = y)
+  if (any(is.na(H)) || det(H) == 0 || any(!is.finite(H))) {
+    warning("Hessian is singular or contains non-finite values; SEs are not available.")
+    se_hat <- rep(NA, length(beta_hat))
+  } else {
+    eigs <- eigen(H, symmetric = TRUE)$values
+    if (any(eigs <= 0)) {
+      warning("Hessian is not positive definite; SEs may be unreliable.")
+      se_hat <- sqrt(diag(solve(H)))
+    } else {
+      se_hat <- sqrt(diag(solve(H)))
+    }
+  }
+
+
+  param_names <- c(colnames(X), "mu", "sigma")
+  names(beta_hat) <- param_names
+  names(se_hat) <- param_names
+
+  # # Print parameter estimates with SEs
+  # cat("Parameter estimates with standard errors:\n")
+  # print(data.frame(Estimate = beta_hat, SE = se_hat, row.names = param_names))
+
+  # Compute fitted values (linear predictor)
+  eta <- as.vector(X %*% beta_hat[1:ncol(X)])
+  lambda_hat <- exp(eta)  # Poisson mean
+  mu_hat <- beta_hat["mu"]
+  sigma_hat <- beta_hat["sigma"]
+
+  # Compute individual log-likelihood contributions
+  loglik_obs <- function(y_i, lambda_i) {
+    if (y_i == 0) {
+      log_p0 <- dpois(0, lambda_i)
+      return(log(log_p0))
+    } else {
+      # Convolution of Poisson and Normal (approximate): use numerical integration or approximation
+      # We'll use simplified approximation for residuals:
+      expected <- lambda_i * mu_hat
+      var <- lambda_i * sigma_hat^2
+      return(dnorm(y_i, mean = expected, sd = sqrt(var), log = TRUE))
+    }
+  }
+
+  loglik_saturated <- function(y_i) {
+    # In saturated model, y_i is predicted perfectly → log-lik is 0 if Normal
+    # For residuals, we assume perfect fit implies maximum likelihood → return 0
+    return(0)
+  }
+
+  dev_res <- numeric(length(y))
+  for (i in seq_along(y)) {
+    ll_hat <- loglik_obs(y[i], lambda_hat[i])
+    ll_sat <- loglik_saturated(y[i])
+    dev_res[i] <- sign(y[i] - lambda_hat[i] * mu_hat) * sqrt(2 * (ll_sat - ll_hat))
+  }
+
+  # Null model (intercept only)
+  X_null <- matrix(1, nrow = nrow(X), ncol = 1)
+  colnames(X_null) <- "(Intercept)"
+  null_fit <- optim(
+    par = c(0, mu_init, sigma_init),
+    fn = cpn_regression_neg_log_likelihood,
+    X = X_null,
+    y = y,
+    method = "Nelder-Mead",
+    Kmax = Kmax,
+    control = list(maxit = 1000)
+  )
+  null_loglik <- -null_fit$value
+
+  null_deviance <- -2 * null_loglik
+  residual_deviance <- -2 * loglik
+  df_null <- length(y) - 1
+  df_residual <- length(y) - length(beta_hat)
+
+  # AIC: -2 * log-likelihood + 2 * number of parameters
+  k <- length(beta_hat)
+  aic_val <- 2 * k + 2 * fit$value  # equivalent to -2 * loglik + 2k
+
+  model_frame <- model.frame(formula, data)
+  terms_obj <- terms(model_frame)
+
+  # Add to returned list
+  structure(list(
+    coefficients = setNames(beta_hat[1:ncol(X)], colnames(X)),
+    mu = beta_hat["mu"],
+    sigma = beta_hat["sigma"],
+    se = se_hat,
+    model = model_frame,
+    terms = terms_obj,
+    formula = formula,
+    data = data,
+    deviance_residuals = dev_res,
+    fitted_values = lambda_hat * mu_hat,
+    neg_log_likelihood = fit$value,
+    null_deviance = null_deviance,
+    residual_deviance = residual_deviance,
+    df_null = df_null,
+    df_residual = df_residual,
+    aic = aic_val,
+    call = match.call()
+  ), class = "cpn")
+}

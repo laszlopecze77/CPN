@@ -1,0 +1,41 @@
+#' Variance-Covariance Matrix for a CPN Model
+#'
+#' Computes the variance-covariance matrix of the estimated parameters from a fitted
+#' Compound Poisson-Normal (CPN) model using the numerical Hessian.
+#'
+#' @param object An object of class \code{"cpn"}, typically produced by a CPN model fitting function.
+#' @param ... Additional arguments (currently unused).
+#'
+#' @return A named variance-covariance matrix of the estimated parameters.
+#'   If the Hessian is singular or non-finite, a matrix of \code{NA} values is returned with a warning.
+#'
+#' @details The Hessian of the negative log-likelihood function is computed using finite differences.
+#'   The inverse of the Hessian is returned as an estimate of the variance-covariance matrix.
+#'
+#' @seealso \code{\link{hessian_fd}}, \code{\link{logLik}}, \code{\link{AIC}}, \code{\link{BIC}}
+#'
+#' @export
+vcov.cpn <- function(object, ...) {
+  # Full parameter vector (coefficients + mu + sigma)
+  full_params <- c(object$coefficients, mu = object$mu, sigma = object$sigma)
+
+  # Compute Hessian
+  H <- hessian_fd(
+    cpn_regression_neg_log_likelihood,
+    x = full_params,
+    X = stats::model.matrix(object$formula, object$data),
+    y = stats::model.response(stats::model.frame(object$formula, object$data))
+  )
+
+  # Check Hessian validity
+  if (any(is.na(H)) || det(H) == 0 || any(!is.finite(H))) {
+    warning("Hessian is singular or contains non-finite values; vcov not available.")
+    return(matrix(NA, nrow = length(full_params), ncol = length(full_params),
+                  dimnames = list(names(full_params), names(full_params))))
+  }
+
+  # Return named variance-covariance matrix
+  V <- solve(H)
+  dimnames(V) <- list(names(full_params), names(full_params))
+  return(V)
+}

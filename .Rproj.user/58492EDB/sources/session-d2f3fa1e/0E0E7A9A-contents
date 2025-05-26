@@ -1,0 +1,437 @@
+# Load packages
+library(haven)
+library(dplyr)
+library(mmrm)
+
+
+####################
+# Import datasets  #
+####################
+
+adps <- read_xpt("/data/ta799-007-fa/cdisc/11_adam_xpt/adps.xpt")
+adsl <- read_xpt("/data/ta799-007-fa/cdisc/11_adam_xpt/adsl.xpt")
+
+# Subsetting the data based on the conditions in the SAS code
+adps_filtered <- adps[adps$PARAMCD == "WKPSVOL" & 
+                        adps$FASFL == "Y" & 
+                        adps$ANL03FL == "Y", ]
+
+
+nVisit24 = length(na.omit(unique(adps$AVISITN[adps$AVISITN <= 24 & adps$AVISITN > 0])))
+nVisit24
+
+adpssample <-  adps_filtered[!is.na(adps_filtered$CHG) &
+                               adps_filtered$AVISITN== 24, ]
+
+
+# Calculate the mean and standard deviation by treatment (trt01P)
+summary_stats <- adpssample %>%
+  group_by(TRT01P) %>%
+  summarise(
+    Mean = mean(CHG, na.rm = TRUE),
+    SE = sd(CHG, na.rm = TRUE) / sqrt(n())
+  )
+
+# View the summary statistics
+print(summary_stats)
+
+
+df_PS <- data.frame(res=adpssample$CHG,
+                    group=adpssample$TRT01P)
+
+
+fit_cpn <- cpn((res)~group, data=df_PS)
+
+summary(fit_cpn)
+
+
+
+
+#########################
+# Only CIC  at Week 24  #
+#########################
+
+df_PS_CIC24 <- data.frame(res=adpssample$CHG[adpssample$PTTYPE=="CIC"] ,
+                    group=adpssample$TRT01P[adpssample$PTTYPE=="CIC"])
+
+fit_cpn <- cpn(res~group, data=df_PS_CIC24, Kmax=200)
+summary(fit_cpn)
+
+
+
+###########################
+# Only STOMA  at Week 24  #
+#########################@@
+
+df_PS_STOMA24 <- data.frame(res=adpssample$CHG[adpssample$PTTYPE=="STOMA"] ,
+                          group=adpssample$TRT01P[adpssample$PTTYPE=="STOMA"])
+
+fit_cpn <- cpn(res~group, data=df_PS_STOMA24, Kmax=200)
+summary(fit_cpn)
+
+#########################
+# Only CIC  at Week 48  #
+#########################
+
+adps_filtered_CIC48 <-  adps[adps$PARAMCD == "WKPSVOL" & 
+                               adps$FASFL == "Y" & 
+                               adps$ANL03FL == "Y" & 
+                               adps$PTTYPE =="CIC" &
+                               !is.na(adps$CHG) &
+                               adps$AVISITN== 48, ]
+
+names(adps_filtered_CIC48)
+names(adsl)
+merged <- merge(adps_filtered_CIC48, adsl["USUBJID","RMCOLCNT" ])
+
+df_PS_CIC48 <- data.frame(res=adps_filtered_CIC48$CHG ,
+                          group=adps_filtered_CIC48$TRT01P,
+                         bl=adps_filtered_CIC48$BASE)
+
+fit_cpn <- cpn(res~group, data=df_PS_CIC48, Kmax=20)
+summary(fit_cpn)
+
+fit_cpn <- cpn(res~group + bl, data=df_PS_CIC48, Kmax=20)
+summary(fit_cpn)
+
+fit_cpn <- cpn(res~group + bl, data=df_PS_CIC48, Kmax=20)
+summary(fit_cpn)
+
+fit_cpn <- cpn(res~group + bl, data=df_PS_CIC48, Kmax=20)
+summary(fit_cpn)
+
+# Calculate the mean and standard deviation by treatment (trt01P)
+summary_stats <- adps_filtered_CIC48%>%
+  group_by(TRT01P) %>%
+  summarise(
+    Mean = mean(CHG, na.rm = TRUE),
+    SE = sd(CHG, na.rm = TRUE) / sqrt(n()),
+    n = n()
+  )
+
+# View the summary statistics
+print(summary_stats)
+
+###########################
+# Only STOMA  at Week 24  #
+#########################@@
+names(adpssample)
+unique(adpssample$RMCLGR1)
+df_PS_STOMACIC24 <- data.frame(
+  res = adpssample$CHG[adpssample$PTTYPE == "STOMA" |
+                         (adpssample$PTTYPE == "CIC" & adpssample$RMCLGR1 != ">= 57%")],
+  group = adpssample$TRT01P[adpssample$PTTYPE == "STOMA" |
+                              (adpssample$PTTYPE == "CIC" & adpssample$RMCLGR1 != ">= 57%")]
+)
+
+fit_cpn <- cpn(res~group, data=df_PS_STOMACIC24, Kmax=200)
+summary(fit_cpn)
+
+# Split the dataset by treatment group
+df_placebo <- subset(df_PS_STOMACIC24, group == "PLACEBO")
+df_ctr     <- subset(df_PS_STOMACIC24, group != "PLACEBO") 
+
+# Sample 40 patients with replacement from each group
+boot_placebo <- df_placebo[sample(nrow(df_placebo), 40, replace = TRUE), ]
+boot_ctr     <- df_ctr[sample(nrow(df_ctr), 40, replace = TRUE), ]
+
+# Combine the bootstrapped samples
+boot_sample <- rbind(boot_placebo, boot_ctr)
+
+
+##############
+# LOOP
+#########
+
+
+
+# Define N values
+N <- c(30,  35,  40,  45,  50)
+
+
+# Function to get p-values for a given sample size
+
+cpn_p_value_list <- NULL
+tt_p_value_list <- NULL
+
+for (j in 1:length(N)){
+  N_actual =N[j]
+  print(N_actual)
+   
+  cpn_p_value <- numeric(100)
+  tt_p_value <- numeric(100)
+  for (i in 1:100){
+    set.seed(123 + i)  # Set seed for reproducibility
+   # Split the dataset by treatment group
+   df_placebo <- subset(df_PS_STOMACIC24, group == "PLACEBO")
+   df_trt     <- subset(df_PS_STOMACIC24, group != "PLACEBO") 
+  
+   # Sample 40 patients with replacement from each group
+   boot_placebo <- df_placebo[sample(nrow(df_placebo), N_actual, replace = TRUE), ]
+    boot_trt    <- df_ctr[sample(nrow(df_trt), N_actual, replace = TRUE), ]
+  
+    # Combine the bootstrapped samples
+   boot_sample <- rbind(boot_placebo, boot_trt)
+  
+   fit <- cpn(res ~ group, data = boot_sample)
+  
+   tt_p_value[i] <- t.test(res ~ group, data = boot_sample)$p.value
+  
+  
+   cpn_p_value[i] <- summary(fit)$summary_table[2, 4]
+  
+    print(i)
+}
+  cpn_p_value_list[[j]] <- cpn_p_value
+  tt_p_value_list[[j]] <- tt_p_value
+  
+  
+}
+
+
+cpn_p_value <- cpn_p_value_list[[1]]
+c1 <- sum(cpn_p_value < 0.05)/length(cpn_p_value)
+
+cpn_p_value <- cpn_p_value_list[[2]]
+c2 <- sum(cpn_p_value < 0.05)/length(cpn_p_value)
+
+cpn_p_value <- cpn_p_value_list[[3]]
+c3 <- sum(cpn_p_value < 0.05)/length(cpn_p_value)
+
+cpn_p_value <- cpn_p_value_list[[4]]
+c4 <- sum(cpn_p_value < 0.05)/length(cpn_p_value)
+
+cpn_p_value <- cpn_p_value_list[[5]]
+c5 <- sum(cpn_p_value < 0.05)/length(cpn_p_value)
+
+
+
+tt_p_value <- tt_p_value_list[[1]]
+t1 <- sum(tt_p_value < 0.05)/length(tt_p_value)
+
+tt_p_value <- tt_p_value_list[[2]]
+t2 <- sum(tt_p_value < 0.05)/length(tt_p_value)
+
+tt_p_value <- tt_p_value_list[[3]]
+t3 <- sum(tt_p_value < 0.05)/length(tt_p_value)
+
+tt_p_value <- tt_p_value_list[[4]]
+t4 <- sum(tt_p_value < 0.05)/length(tt_p_value)
+
+tt_p_value <- tt_p_value_list[[5]]
+t5 <- sum(tt_p_value < 0.05)/length(tt_p_value)
+
+df_chg_res <- data.frame(cpn= c(c1, c2, c3, c4, c5),
+                          ttest_chg= c(t1, t2, t3, t4, t5),
+                          N=N)
+library(tidyr)
+library(ggplot2)
+# Reshape to long format
+df_long <- pivot_longer(
+  df_chg_res,
+  cols = c(cpn, ttest_chg),
+  names_to = "method",
+  values_to = "change"
+)
+
+# Plot
+ggplot(df_long, aes(x = N, y = change, color = method)) +
+  geom_line(size = 1.2) +
+  geom_point(size = 2) +
+  labs(
+    title = "Sample Size Estimation on Change from BL values",
+    subtitle ="bootstrap sample - CHG values - FAS* - no strata",
+    x = "Sample Size (N)",
+    y = "Simulated Power (alpha=0.05)",
+    color = "Method"
+  ) +
+  theme_minimal()
+
+sum(tt_p_value < 0.05)/length(tt_p_value)
+sum(p_value < 0.05)/length(p_value)
+
+
+###################
+# MMRM   PCHG         #
+###################
+
+names(adpssample)
+df_PS_PCHG <- data.frame(subjid=as.factor(adps_filtered$USUBJID), 
+                    res=adps_filtered$PCHG,
+                    group=as.factor(adps_filtered$TRT01P),
+                    visit=as.factor(adps_filtered$AVISITN),
+                    pttype=as.factor(adps_filtered$PTTYPE),
+                    base=adps_filtered$BASE)
+
+df_PS_PCHG <- df_PS_PCHG[!is.na(df_PS_PCHG$res) &
+                           (df_PS_PCHG$visit %in% c("4", "8", "12", "16", "20", "24")), ]
+df_PS_PCHG$visit <- droplevels(df_PS_PCHG$visit)
+
+library(mmrm)
+library(emmeans)
+
+fit_mmrm <- mmrm(
+  formula = res ~ base + pttype + group + visit + 
+                  base:visit +  group:visit + us(visit | subjid),
+  data = df_PS_PCHG,
+  method = "Between-Within",
+  vcov = "Empirical" 
+)
+
+
+emmres <- emmeans(fit_mmrm,  pairwise~  group | visit, adjust="none")
+df_emmres<-as.data.frame(emmres$contrasts)
+names(df_emmres)
+df_emmres$visit
+df_emmres[df_emmres$visit=="24", ]$p.value
+
+
+
+
+# Define N values
+N <- c(50,  60,  70,  80,  90)
+
+# Split dataset once
+df_placebo <- subset(df_PS_PCHG, group == "PLACEBO")
+df_trt     <- subset(df_PS_PCHG, group != "PLACEBO")
+
+# Function to get p-values for a given sample size
+
+mmrm_p_value_list <- NULL
+tt_p_value_list <- NULL
+
+for (j in 1:length(N)){
+  N_actual =N[j]
+  print(N_actual)
+  
+  mmrm_p_value <- numeric(100)
+  tt_p_value   <- numeric(100)
+  for (i in 1:100){
+    print(i)
+    set.seed(123 + i)
+    # Ensure consistent ID types
+    df_placebo$subjid <- as.character(df_placebo$subjid)
+    df_trt$subjid     <- as.character(df_trt$subjid)
+    
+    # Sample subject IDs with replacement
+    subj_placebo <- sample(unique(df_placebo$subjid), N_actual, replace = TRUE)
+    subj_trt     <- sample(unique(df_trt$subjid), N_actual, replace = TRUE)
+    
+    # Frequency tables
+    freq_placebo <- table(subj_placebo)
+    freq_trt     <- table(subj_trt)
+    
+    # Function to generate replicated data with bootstrap index and ID
+    replicate_subject_rows <- function(df, freq_table) {
+      do.call(rbind, lapply(names(freq_table), function(id) {
+        rows <- df[df$subjid == id, ]
+        if (nrow(rows) == 0) return(NULL)
+        n_rep <- as.integer(freq_table[[id]])
+        replicated_list <- lapply(seq_len(n_rep), function(i) {
+          tmp <- rows
+          tmp$bootstrap_id <- i
+          tmp$bootstrap_subjid <- paste0(id, "_", i)
+          tmp
+        })
+        do.call(rbind, replicated_list)
+      }))
+    }
+    
+    # Generate bootstrap samples
+    boot_placebo <- replicate_subject_rows(df_placebo, freq_placebo)
+    boot_trt     <- replicate_subject_rows(df_trt, freq_trt)
+    
+    # Combine
+    boot_sample <- rbind(boot_placebo, boot_trt)
+    
+
+    boot_sample$bootstrap_subjid <-as.factor(boot_sample$bootstrap_subjid)
+    
+    fit_mmrm <- mmrm(
+      res ~ base + pttype + group + visit + 
+        base:visit + group:visit + us(visit | bootstrap_subjid),
+      data = boot_sample,
+      method = "Between-Within",
+      vcov = "Empirical"
+    )
+    
+    df_emmres <- as.data.frame(emmeans(fit_mmrm, pairwise ~ group * visit, adjust = "none")$contrasts)
+    mmrm_p_value[i] <- df_emmres[df_emmres$contrast == "APRAGLUTIDE visit24 - PLACEBO visit24", "p.value"]
+    
+    
+    tt_p_value[i] <- t.test(res ~ group, data = boot_sample[boot_sample$visit=="24",])$p.value
+    
+  }
+  
+  mmrm_p_value_list[[j]] <- mmrm_p_value
+  tt_p_value_list[[j]] <- tt_p_value
+  
+
+}
+
+unique(boot_sample$subjid)
+boot_sample <-droplevels(boot_sample)
+table(boot_sample$subjid, boot_sample$group)
+table(boot_sample$bootstrap_subjid, boot_sample$group)
+
+unique(boot_sample$bootstrap_subjid)
+
+mmrm_p_value <- mmrm_p_value_list[[1]]
+r1 <- sum(mmrm_p_value < 0.05)/length(mmrm_p_value)
+
+mmrm_p_value <- mmrm_p_value_list[[2]]
+r2 <- sum(mmrm_p_value < 0.05)/length(mmrm_p_value)
+
+mmrm_p_value <- mmrm_p_value_list[[3]]
+r3 <- sum(mmrm_p_value < 0.05)/length(mmrm_p_value)
+
+mmrm_p_value <- mmrm_p_value_list[[4]]
+r4 <- sum(mmrm_p_value < 0.05)/length(mmrm_p_value)
+
+mmrm_p_value <- mmrm_p_value_list[[5]]
+r5 <- sum(mmrm_p_value < 0.05)/length(mmrm_p_value)
+
+
+
+tt_p_value <- tt_p_value_list[[1]]
+t1 <- sum(tt_p_value < 0.05)/length(tt_p_value)
+
+tt_p_value <- tt_p_value_list[[2]]
+t2 <- sum(tt_p_value < 0.05)/length(tt_p_value)
+
+tt_p_value <- tt_p_value_list[[3]]
+t3 <- sum(tt_p_value < 0.05)/length(tt_p_value)
+
+tt_p_value <- tt_p_value_list[[4]]
+t4 <- sum(tt_p_value < 0.05)/length(tt_p_value)
+
+tt_p_value <- tt_p_value_list[[5]]
+t5 <- sum(tt_p_value < 0.05)/length(tt_p_value)
+
+df_pchg_res <- data.frame(mmrm= c(r1, r2, r3, r4, r5),
+                 ttest= c(t1, t2, t3, t4, t5),
+                 N=N)
+tt_p_value[2]
+mmrm_p_value[2]
+
+# Reshape to long format
+df_long <- pivot_longer(
+  df_pchg_res,
+  cols = c(mmrm, ttest),
+  names_to = "method",
+  values_to = "change"
+)
+
+# Plot
+ggplot(df_long, aes(x = N, y = change, color = method)) +
+  geom_line(size = 1.2) +
+  geom_point(size = 2) +
+  labs(
+    title = "Sample Size Estimation",
+    subtitle ="bootstrap sample - PCHG values - FAS - no strata",
+    x = "Sample Size (N)",
+    y = "Simulated Power (alpha=0.05)",
+    color = "Method"
+  ) +
+  theme_minimal()
+
