@@ -63,15 +63,15 @@ anova.cpn <- function(object, ..., test = "Chisq") {
     # Build comparison table
     result <- data.frame(
       Model = paste0("Model ", seq_len(n_models)),
-      Residual_Df = df_res,
-      Residual_Deviance = dev,
+      `Resid. Df` = df_res,
+      `Resid. Dev` = dev,
       Df = df_diff,
       Deviance = dev_diff,
       `Pr(>Chi)` = p_vals,
       check.names = FALSE
     )
 
-    class(result) <- c("anova", "data.frame")
+    class(result) <- c("anova.cpn", "data.frame")
     return(result)
 
   } else {
@@ -79,6 +79,7 @@ anova.cpn <- function(object, ..., test = "Chisq") {
     full_formula <- stats::formula(object)
     terms_obj <- stats::terms(object)
     term_labels <- attr(terms_obj, "term.labels")
+
 
     if (length(term_labels) == 0) {
       warning("Model contains only an intercept. No terms to test.")
@@ -95,7 +96,7 @@ anova.cpn <- function(object, ..., test = "Chisq") {
     df_prev <- fit_prev$df_residual
 
     rows <- list()
-    rows[[1]] <- list(Term = "(Intercept)", Df = NA, Deviance = NA,
+    rows[[1]] <- list(Term = "Residuals", Df = NA, Deviance = NA,
                       `Resid. Df` = df_prev, `Resid. Dev` = dev_prev, `Pr(>Chi)` = NA)
 
     for (i in seq_along(term_labels)) {
@@ -114,6 +115,7 @@ anova.cpn <- function(object, ..., test = "Chisq") {
         NA
       }
 
+
       rows[[i + 1]] <- list(Term = term, Df = df_diff, Deviance = dev_diff,
                             `Resid. Df` = df_curr, `Resid. Dev` = dev_curr, `Pr(>Chi)` = p_val)
 
@@ -121,26 +123,51 @@ anova.cpn <- function(object, ..., test = "Chisq") {
       df_prev <- df_curr
     }
 
-    anova_df <- do.call(rbind, lapply(rows, as.data.frame))
+    rows_list <- lapply(rows, function(row) as.data.frame(row, check.names = FALSE))
+
+    anova_df <- do.call(rbind, rows_list)
+
     rownames(anova_df) <- NULL
-    class(anova_df) <- c("anova", "data.frame")
+
+    class(anova_df) <- c("anova.cpn", "data.frame")
+
     return(anova_df)
   }
 }
 
 #' @export
 print.anova.cpn <- function(x, digits = max(4, getOption("digits") - 2), ...) {
-  if (!("Term" %in% names(x))) {
-    print.data.frame(x, digits = digits, ...)
+  signif_stars <- if ("Pr(>Chi)" %in% names(x)) {
+    stats::symnum(x$`Pr(>Chi)`,
+           corr = FALSE, na = FALSE,
+           cutpoints = c(0, 0.001, 0.01, 0.05, 0.1, 1),
+           symbols = c("***", "**", "*", ".", " "))
   } else {
-    signif_stars <- stats::symnum(x$`Pr(>Chi)`,
-                           corr = FALSE, na = FALSE,
-                           cutpoints = c(0, 0.001, 0.01, 0.05, 0.1, 1),
-                           symbols = c("***", "**", "*", ".", " "))
-    out <- cbind(x, Signif = signif_stars)
-    print.data.frame(out, digits = digits, row.names = FALSE, ...)
+    NULL
+  }
+
+  out <- data.frame(x, stringsAsFactors = FALSE, check.names = FALSE)
+
+  if (!is.null(signif_stars)) {
+    out$Signif <- signif_stars
+  }
+
+  # Convert NAs to empty strings (only for display)
+  out_print <- out
+  out_print[] <- lapply(out_print, function(col) {
+    if (is.numeric(col)) {
+      return(ifelse(is.na(col), "", formatC(col, digits = digits, format = "g")))
+    } else {
+      return(ifelse(is.na(col), "", as.character(col)))
+    }
+  })
+
+  print(out_print, right = TRUE, row.names = FALSE, ...)
+
+  if (!is.null(signif_stars)) {
     cat("---\n")
     cat("Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1\n")
   }
+
   invisible(x)
 }
