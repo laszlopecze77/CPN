@@ -2,9 +2,11 @@
 #'
 #' Calculates the AIC for a fitted Compound Poisson-Normal (CPN) model.
 #'
-#' @param object An object of class \code{"cpn"}, typically produced by a CPN model fitting function.
+#' @param object An object of class \code{"cpn"}, typically produced by a CPN
+#' model fitting function.
 #' @param ... Additional arguments (currently unused).
-#' @param k Numeric penalty per parameter; the default is \code{2}, corresponding to the traditional AIC.
+#' @param k Numeric penalty per parameter; the default is \code{2},
+#' corresponding to the traditional AIC.
 #'
 #' @return A numeric value representing the AIC of the model.
 #'

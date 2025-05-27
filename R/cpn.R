@@ -1,55 +1,86 @@
-#' Fit a Compound Poisson-Normal (CPN) Regression Model
+#' Compound Poisson-Normal Regression
 #'
-#' Fits a generalized regression model where the response is assumed to follow a
-#' Compound Poisson-Normal (CPN) distribution. The Poisson intensity is modeled via
-#' a log-link function with covariates.
+#' Fits a Compound Poisson-Normal (CPN) regression model to the response
+#' variable using maximum likelihood estimation via the Nelder-Mead method.
 #'
-#' @param formula A formula specifying the regression model.
-#' @param data A data frame containing the variables in the model.
-#' @param mu_init Optional initial value for the normal component mean.
-#' @param sigma_init Optional initial value for the normal component standard deviation.
-#' @param Kmax Integer. Maximum number of Poisson terms to include when approximating the likelihood. Controls computational accuracy and speed.
-#' @param epsilon Numeric. Tail probability threshold for Poisson truncation (default is 1e-6).
-#'
-#' @return An object of class \code{"cpn"} containing:
-#'   \item{coefficients}{Estimated regression coefficients for the Poisson component}
-#'   \item{mu, sigma}{Estimated normal component parameters}
-#'   \item{se}{Standard errors of all parameters}
-#'   \item{formula, data}{Input formula and data}
-#'   \item{fitted_values}{Fitted means of the CPN distribution}
-#'   \item{deviance_residuals}{Deviance residuals}
-#'   \item{null_deviance, residual_deviance}{Deviance statistics}
-#'   \item{df_null, df_residual}{Degrees of freedom for null and fitted model}
-#'   \item{aic}{Akaike Information Criterion value}
-#'   \item{neg_log_likelihood}{Value of the minimized negative log-likelihood}
-#'
+#' @param formula A formula specifying the model, e.g., \code{y ~ x1 + x2}.
+#' @param data An optional data frame, list, or environment containing the
+#' variables in the model. If not found in \code{data}, the variables are
+#' taken from the environment from which \code{cpn} is called.
+#' @param mu_init Optional initial value for the Normal mean parameter.
+#' If \code{NULL}, it is set to the sample mean of \code{y}.
+#' @param sigma_init Optional initial value for the Normal standard deviation.
+#' If \code{NULL}, it is set to the sample standard deviation of \code{y}.
+#' @param epsilon A small positive value used for numerical tolerance in
+#' convergence checks. Default is \code{1e-6}.
+#' @param k_max Upper limit of summation used in approximating the Poisson
+#' convolution. Should be between 10 and 100. Default is 10.
 #'
 #' @details
-#' The CPN model treats each observation as a sum of a Poisson-distributed number of
-#' i.i.d. normal variables. This function fits the model using maximum likelihood,
-#' computes standard errors from the Hessian (via finite differences),
-#' and calculates diagnostics such as deviance and AIC.
+#' The function fits a regression model where the response is assumed to follow
+#' a Compound Poisson-Normal distribution. The model estimates regression
+#' coefficients for the Poisson intensity, and mean and standard deviation of
+#' the Normal component.
 #'
-#' @seealso  \code{\link{cpn_regression_neg_log_likelihood}}
+#' The optimization is performed via maximum likelihood using the Nelder-Mead
+#' method. Standard errors are computed via the observed information matrix
+#' using numerical Hessian. If the Hessian is singular or not positive
+#' definite, a warning is issued and standard errors are returned as \code{NA}.
+#'
+#' @return An object of class \code{"cpn"} containing the following components:
+#' \item{coefficients}{Estimated regression coefficients.}
+#' \item{mu}{Estimated mean of the Normal component.}
+#' \item{sigma}{Estimated standard deviation of the Normal component.}
+#' \item{se}{Standard errors of the estimated parameters.}
+#' \item{model}{The model frame used.}
+#' \item{terms}{The terms object from the model.}
+#' \item{formula}{The model formula.}
+#' \item{data}{The original data passed in.}
+#' \item{deviance_residuals}{Vector of deviance residuals.}
+#' \item{fitted_values}{Fitted values (Poisson mean times Normal mean).}
+#' \item{neg_log_likelihood}{Negative log-likelihood at the optimum.}
+#' \item{null_deviance}{Null model deviance.}
+#' \item{residual_deviance}{Residual deviance of the fitted model.}
+#' \item{df_null}{Degrees of freedom for the null model.}
+#' \item{df_residual}{Degrees of freedom for the fitted model.}
+#' \item{aic}{Akaike Information Criterion.}
+#' \item{call}{The matched function call.}
 #'
 #' @examples
-#' df <- data.frame(x1 = rnorm(100), x2 = runif(100))
-#' df$y <- rpois(100, lambda = exp(0.5 * df$x1 - 0.3 * df$x2)) * 2 + rnorm(100)
-#' model <- cpn(y ~ x1 + x2, data = df)
-#' summary(model)
+#' \dontrun{
+#'   set.seed(123)
+#'   n <- 100
+#'   x <- rnorm(n)
+#'   lambda <- exp(0.5 + 0.2 * x)
+#'   N <- rpois(n, lambda)
+#'   y <- ifelse(N == 0, 0, rnorm(n, mean = N * 3, sd = sqrt(N) * 2))
+#'   data <- data.frame(y = y, x = x)
+#'   fit <- cpn(y ~ x, data = data)
+#'   summary(fit)
+#' }
 #'
-#' @importFrom numDeriv hessian
+#' @importFrom stats as.formula model.frame model.matrix model.response
+#' @importFrom stats optim setNames sd dnorm dpois terms
 #' @export
 
+cpn <- function(formula,
+                data = NULL,
+                mu_init = NULL,
+                sigma_init = NULL,
+                epsilon = 1e-6,
+                k_max = 10) {
 
-cpn <- function(formula, data, mu_init = NULL, sigma_init = NULL, epsilon = 1e-6, Kmax=10) {
   # Ensure required package
   if (!requireNamespace("numDeriv", quietly = TRUE)) {
     stop("Package 'numDeriv' is required but not installed.")
   }
 
+  if (k_max < 10 || k_max > 100) stop("k_max should be between 10 and 100")
+
   # Build model frame and design matrix
-  mf <- stats::model.frame(formula, data)
+  # (allow formula to work with or without data argument)
+  formula <- stats::as.formula(formula, env = parent.frame())
+  mf <- stats::model.frame(formula = formula, data = data)
   y <- stats::model.response(mf)
   X <- stats::model.matrix(attr(mf, "terms"), data = mf)
 
@@ -65,7 +96,7 @@ cpn <- function(formula, data, mu_init = NULL, sigma_init = NULL, epsilon = 1e-6
     fn = cpn_regression_neg_log_likelihood,
     X = X,
     y = y,
-    Kmax = Kmax,
+    k_max = k_max,
     method = "Nelder-Mead",
     control = list(maxit = 1000)
   )
@@ -74,20 +105,23 @@ cpn <- function(formula, data, mu_init = NULL, sigma_init = NULL, epsilon = 1e-6
   loglik <- -fit$value
 
   # Compute Hessian and standard errors
-  # H <- numDeriv::hessian(func = cpn_regression_neg_log_likelihood, x = beta_hat, X = X, y = y)
-  #H <- hessian_fd(func = cpn_regression_neg_log_likelihood, x = beta_hat, X = X, y = y)
-
   H <- tryCatch({
-    numDeriv::hessian(func = function(par) cpn_regression_neg_log_likelihood(par, X, y, Kmax = Kmax),
-                      x = beta_hat)
+    numDeriv::hessian(
+      func = function(par) {
+        cpn_regression_neg_log_likelihood(
+          par, X, y, k_max = k_max
+        )
+      },
+      x = beta_hat
+    )
   }, error = function(e) {
     warning("Failed to compute Hessian: ", e$message)
     return(matrix(NA, length(beta_hat), length(beta_hat)))
   })
 
-  # H <- hessian_fd_nosym(func = cpn_regression_neg_log_likelihood, x = beta_hat, X = X, y = y)
   if (any(is.na(H)) || det(H) == 0 || any(!is.finite(H))) {
-    warning("Hessian is singular or contains non-finite values; SEs are not available.")
+    warning("Hessian is singular or contains non-finite values; SEs are not
+            available.")
     se_hat <- rep(NA, length(beta_hat))
   } else {
     eigs <- eigen(H, symmetric = TRUE)$values
@@ -104,12 +138,8 @@ cpn <- function(formula, data, mu_init = NULL, sigma_init = NULL, epsilon = 1e-6
   names(beta_hat) <- param_names
   names(se_hat) <- param_names
 
-  # # Print parameter estimates with SEs
-  # cat("Parameter estimates with standard errors:\n")
-  # print(data.frame(Estimate = beta_hat, SE = se_hat, row.names = param_names))
-
   # Compute fitted values (linear predictor)
-  eta <- as.vector(X %*% beta_hat[1:ncol(X)])
+  eta <- as.vector(X %*% beta_hat[seq_len(ncol(X))])
   lambda_hat <- exp(eta)  # Poisson mean
   mu_hat <- beta_hat["mu"]
   sigma_hat <- beta_hat["sigma"]
@@ -138,7 +168,8 @@ cpn <- function(formula, data, mu_init = NULL, sigma_init = NULL, epsilon = 1e-6
   for (i in seq_along(y)) {
     ll_hat <- loglik_obs(y[i], lambda_hat[i])
     ll_sat <- loglik_saturated(y[i])
-    dev_res[i] <- sign(y[i] - lambda_hat[i] * mu_hat) * sqrt(2 * (ll_sat - ll_hat))
+    diff <- y[i] - lambda_hat[i] * mu_hat
+    dev_res[i] <- sign(diff) * sqrt(2 * (ll_sat - ll_hat))
   }
 
   # Null model (intercept only)
@@ -150,7 +181,7 @@ cpn <- function(formula, data, mu_init = NULL, sigma_init = NULL, epsilon = 1e-6
     X = X_null,
     y = y,
     method = "Nelder-Mead",
-    Kmax = Kmax,
+    k_max = k_max,
     control = list(maxit = 1000)
   )
   null_loglik <- -null_fit$value
@@ -169,7 +200,7 @@ cpn <- function(formula, data, mu_init = NULL, sigma_init = NULL, epsilon = 1e-6
 
   # Add to returned list
   structure(list(
-    coefficients = stats::setNames(beta_hat[1:ncol(X)], colnames(X)),
+    coefficients = stats::setNames(beta_hat[seq_len(ncol(X))], colnames(X)),
     mu = beta_hat["mu"],
     sigma = beta_hat["sigma"],
     se = se_hat,

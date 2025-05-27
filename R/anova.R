@@ -4,11 +4,14 @@
 #' (1) sequentially by model terms (Type I ANOVA) when one model is supplied, or
 #' (2) by comparing two or more nested models.
 #'
-#' @param object An object of class `cpn`, typically the result of a call to [cpn()].
+#' @param object An object of class `cpn`, typically the result of a call
+#' to [cpn()].
 #' @param ... Optional additional objects of class `cpn` for model comparison.
-#' @param test A character string specifying the test statistic. Currently only `"Chisq"` is supported.
+#' @param test A character string specifying the test statistic. Currently only
+#' `"Chisq"` is supported.
 #'
-#' @return An object of class `"anova"` inheriting from `"data.frame"`, containing:
+#' @return An object of class `"anova"` inheriting from `"data.frame"`,
+#' containing:
 #'   - If one model is provided: sequential deviance table by added terms.
 #'   - If multiple models are provided: deviance comparison between models.
 #'
@@ -58,7 +61,9 @@ anova.cpn <- function(object, ..., test = "Chisq") {
     # Compute differences and p-values
     df_diff <- c(NA, diff(df_res))
     dev_diff <- c(NA, diff(dev))
-    p_vals <- c(NA, stats::pchisq(dev_diff[-1], df_diff[-1], lower.tail = FALSE))
+    p_vals <- c(NA, stats::pchisq(dev_diff[-1],
+                                  df_diff[-1],
+                                  lower.tail = FALSE))
 
     # Build comparison table
     result <- data.frame(
@@ -76,7 +81,6 @@ anova.cpn <- function(object, ..., test = "Chisq") {
 
   } else {
     # Single-model mode: sequential deviance table by term
-    full_formula <- stats::formula(object)
     terms_obj <- stats::terms(object)
     term_labels <- attr(terms_obj, "term.labels")
 
@@ -97,11 +101,15 @@ anova.cpn <- function(object, ..., test = "Chisq") {
 
     rows <- list()
     rows[[1]] <- list(Term = "Residuals", Df = NA, Deviance = NA,
-                      `Resid. Df` = df_prev, `Resid. Dev` = dev_prev, `Pr(>Chi)` = NA)
+                      `Resid. Df` = df_prev, `Resid. Dev` = dev_prev,
+                      `Pr(>Chi)` = NA)
 
     for (i in seq_along(term_labels)) {
       term <- term_labels[i]
-      current_formula <- stats::as.formula(paste(response, "~", paste(term_labels[1:i], collapse = " + ")))
+      current_formula <- stats::as.formula(paste(response,
+                                                 "~",
+                                                 paste(term_labels[1:i],
+                                                       collapse = " + ")))
       fit_curr <- cpn(current_formula, data = data)
 
       dev_curr <- fit_curr$residual_deviance
@@ -117,13 +125,16 @@ anova.cpn <- function(object, ..., test = "Chisq") {
 
 
       rows[[i + 1]] <- list(Term = term, Df = df_diff, Deviance = dev_diff,
-                            `Resid. Df` = df_curr, `Resid. Dev` = dev_curr, `Pr(>Chi)` = p_val)
+                            `Resid. Df` = df_curr, `Resid. Dev` = dev_curr,
+                            `Pr(>Chi)` = p_val)
 
       dev_prev <- dev_curr
       df_prev <- df_curr
     }
 
-    rows_list <- lapply(rows, function(row) as.data.frame(row, check.names = FALSE))
+    rows_list <- lapply(rows, function(row) {
+      as.data.frame(row, check.names = FALSE)
+    })
 
     anova_df <- do.call(rbind, rows_list)
 
@@ -139,9 +150,9 @@ anova.cpn <- function(object, ..., test = "Chisq") {
 print.anova.cpn <- function(x, digits = max(4, getOption("digits") - 2), ...) {
   signif_stars <- if ("Pr(>Chi)" %in% names(x)) {
     stats::symnum(x$`Pr(>Chi)`,
-           corr = FALSE, na = FALSE,
-           cutpoints = c(0, 0.001, 0.01, 0.05, 0.1, 1),
-           symbols = c("***", "**", "*", ".", " "))
+                  corr = FALSE, na = FALSE,
+                  cutpoints = c(0, 0.001, 0.01, 0.05, 0.1, 1),
+                  symbols = c("***", "**", "*", ".", " "))
   } else {
     NULL
   }
@@ -156,7 +167,8 @@ print.anova.cpn <- function(x, digits = max(4, getOption("digits") - 2), ...) {
   out_print <- out
   out_print[] <- lapply(out_print, function(col) {
     if (is.numeric(col)) {
-      return(ifelse(is.na(col), "", formatC(col, digits = digits, format = "g")))
+      return(ifelse(is.na(col), "", formatC(col, digits = digits,
+                                            format = "g")))
     } else {
       return(ifelse(is.na(col), "", as.character(col)))
     }

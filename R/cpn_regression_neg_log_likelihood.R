@@ -13,7 +13,7 @@
 #'   }
 #' @param X Numeric matrix of covariates, with one row per observation.
 #' @param y Numeric vector of response values, assumed to follow a CPN distribution.
-#' @param Kmax Integer. Maximum number of Poisson terms to include when approximating the likelihood. Controls computational accuracy and speed.
+#' @param k_max Integer. Maximum number of Poisson terms to include when approximating the likelihood. Controls computational accuracy and speed.
 #'
 #' @return The negative log-likelihood (scalar). Returns \code{Inf} if \code{sigma <= 0} or
 #' if any observation has a likelihood of zero (to avoid \code{log(0)}).
@@ -22,7 +22,7 @@
 #' The model assumes that the response \code{y} is a sum of a Poisson-distributed number
 #' of i.i.d. normal variables. The Poisson intensity is linked to predictors via
 #' \code{lambda_i = exp(X %*% beta)}. The likelihood is truncated by computing a finite sum
-#' over a range of \code{k} values up to \code{Kmax}.
+#' over a range of \code{k} values up to \code{k_max}.
 
 #'
 #' @examples
@@ -33,7 +33,7 @@
 #' cpn_regression_neg_log_likelihood(params, X, y)
 #'
 #' @export
-cpn_regression_neg_log_likelihood <- function(beta_mu_sigma, X, y, Kmax=10) {
+cpn_regression_neg_log_likelihood <- function(beta_mu_sigma, X, y, k_max=10) {
 
   # Extract parameters
   p <- ncol(X)
@@ -48,7 +48,7 @@ cpn_regression_neg_log_likelihood <- function(beta_mu_sigma, X, y, Kmax=10) {
   lambda_vec <- as.vector(exp(eta))  # Observation-specific lambda
 
   # Determine a maximum K across all lambda (for truncation)
-  #Kmax <- find_Kmax(max(lambda_vec))
+  #k_max <- find_k_max(max(lambda_vec))
 
   # Compute likelihood for each observation
   likelihoods <- mapply(function(x_i, lambda_i) {
@@ -56,7 +56,7 @@ cpn_regression_neg_log_likelihood <- function(beta_mu_sigma, X, y, Kmax=10) {
     if (x_i == 0) {
       prob <- stats::dpois(0, lambda_i)
     } else {
-      k_vals <- 1:Kmax
+      k_vals <- 1:k_max
       poisson_probs <- stats::dpois(k_vals, lambda_i)
       normal_probs <- stats::dnorm(x_i, mean = k_vals * mu, sd = sqrt(k_vals * sigma^2))
       prob <- sum(poisson_probs * normal_probs)
