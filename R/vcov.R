@@ -35,7 +35,7 @@
 #' @export
 vcov.cpn <- function(object, ...) {
   # Full parameter vector (coefficients + mu + sigma)
-  full_params <- c(object$coefficients, mu = object$mu, sigma = object$sigma)
+  full_params <- c(object$coefficients, object$mu, object$sigma)
 
   # Compute Hessian
   H <- numDeriv::hessian(

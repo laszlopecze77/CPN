@@ -15,7 +15,7 @@
 #'
 coef.cpn <- function(object, full = TRUE, ...) {
   if (full) {
-    return(c(object$coefficients, mu = object$mu, sigma = object$sigma))
+    return(c(object$coefficients, object$mu, object$sigma))
   }
   return(object$coefficients)
 }
