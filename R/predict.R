@@ -1,16 +1,25 @@
 #' Predict Method for CPN Model Objects
 #'
-#' Computes predictions from a fitted Compound Poisson-Normal (CPN) regression model.
-#' Supports predictions on the link or response scale, with optional confidence intervals.
+#' Computes predictions from a fitted Compound Poisson-Normal (CPN) regression
+#' model.
+#' Supports predictions on the link or response scale, with optional confidence
+#' intervals.
 #'
-#' @param object An object of class `cpn`, typically the result of a call to a function fitting a Compound Poisson-Normal regression model.
-#' @param newdata An optional data frame in which to look for variables with which to predict. If omitted, the original model data is used.
-#' @param type Type of prediction: \code{"link"} returns the linear predictor \eqn{\eta = X\beta}; \code{"response"} returns the mean response \eqn{E[Y] = \mu \cdot \exp(\eta)}.
-#' @param interval Type of interval calculation. Either \code{"none"} (default) or \code{"confidence"} for confidence intervals around the predicted values.
+#' @param object An object of class `cpn`, typically the result of a call to a
+#' function fitting a Compound Poisson-Normal regression model.
+#' @param newdata An optional data frame in which to look for variables
+#' with which to predict. If omitted, the original model data is used.
+#' @param type Type of prediction: \code{"link"} returns the linear
+#' predictor \eqn{\eta = X\beta}; \code{"response"} returns the mean
+#' response \eqn{E[Y] = \mu \cdot \exp(\eta)}.
+#' @param interval Type of interval calculation. Either \code{"none"} (default)
+#' or \code{"confidence"} for confidence intervals around the predicted values.
 #' @param level Confidence level for the interval. Defaults to 0.95.
-#' @param ... Further arguments passed to or from other methods (not currently used).
+#' @param ... Further arguments passed to or from other methods (not currently
+#' used).
 #'
-#' @return If \code{interval = "none"}, returns a numeric vector of predicted values on the specified scale.
+#' @return If \code{interval = "none"}, returns a numeric vector of predicted
+#' values on the specified scale.
 #' If \code{interval = "confidence"}, returns a data frame with columns:
 #' \describe{
 #'   \item{\code{fit}}{Predicted value}
@@ -18,11 +27,15 @@
 #'   \item{\code{upr}}{Upper bound of the confidence interval}
 #' }
 #'
-#' @details For predictions on the response scale with confidence intervals, the standard errors of both the linear predictor and the estimated \code{mu} parameter are combined using the delta method.
+#' @details For predictions on the response scale with confidence intervals,
+#' the standard errors of both the linear predictor and the estimated \code{mu}
+#' parameter are combined using the delta method.
 #'
-#' Factor levels in \code{newdata} are aligned to match those used in the original model fit.
+#' Factor levels in \code{newdata} are aligned to match those used in the
+#' original model fit.
 #'
-#' @seealso \code{\link{cpn}}, \code{\link{vcov}}, \code{\link{model.matrix}}, \code{\link{predict}}
+#' @seealso \code{\link{cpn}}, \code{\link{vcov}}, \code{\link{model.matrix}},
+#'  \code{\link{predict}}
 #'
 #' @examples
 #' \dontrun{
@@ -43,7 +56,7 @@ predict.cpn <- function(object, newdata = NULL, type = c("response", "link"),
 
   if (is.null(newdata)) {
     X <- stats::model.matrix(terms_noy, data = object$model,
-                      contrasts.arg = attr(object$model, "contrasts"))
+                             contrasts.arg = attr(object$model, "contrasts"))
   } else {
     for (v in names(object$model)) {
       if (is.factor(object$model[[v]]) && v %in% names(newdata)) {
@@ -51,9 +64,10 @@ predict.cpn <- function(object, newdata = NULL, type = c("response", "link"),
       }
     }
     mf <- stats::model.frame(terms_noy, data = newdata,
-                      xlev = stats::.getXlevels(object$terms, object$model))
+                             xlev = stats::.getXlevels(object$terms,
+                                                       object$model))
     X <- stats::model.matrix(terms_noy, data = mf,
-                      contrasts.arg = attr(object$model, "contrasts"))
+                             contrasts.arg = attr(object$model, "contrasts"))
   }
 
   beta_hat <- object$coefficients
@@ -91,5 +105,3 @@ predict.cpn <- function(object, newdata = NULL, type = c("response", "link"),
   upr <- fit + z * se_fit
   return(data.frame(fit = fit, lwr = lwr, upr = upr))
 }
-
-

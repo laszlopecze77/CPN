@@ -2,7 +2,8 @@
 #'
 #' Returns the log-likelihood of a fitted Compound Poisson-Normal (CPN) model.
 #'
-#' @param object An object of class \code{"cpn"}, typically resulting from a CPN model fitting function.
+#' @param object An object of class \code{"cpn"}, typically resulting from a
+#' CPN model fitting function.
 #' @param ... Additional arguments (currently unused).
 #'
 #' @return An object of class \code{"logLik"} representing the log-likelihood.

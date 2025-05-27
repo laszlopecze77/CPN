@@ -1,16 +1,21 @@
 #' Summarize a Compound Poisson-Normal (CPN) Model Fit
 #'
-#' Produces a summary for a fitted `cpn` model object, including parameter estimates,
-#' standard errors, z-values, p-values, deviance residual summaries, and model diagnostics.
+#' Produces a summary for a fitted `cpn` model object, including parameter
+#' estimates,
+#' standard errors, z-values, p-values, deviance residual summaries, and model
+#' diagnostics.
 #'
-#' @param object An object of class `"cpn"`, typically resulting from a call to a CPN regression function.
+#' @param object An object of class `"cpn"`, typically resulting from a call
+#' to a CPN regression function.
 #' @param ... Additional arguments (currently ignored).
 #'
 #' @return An object of class `"summary.cpn"`, which is a list containing:
 #' \describe{
 #'   \item{call}{The matched call that generated the model.}
-#'   \item{summary_table}{A data frame with parameter estimates, standard errors, z-values, and p-values.}
-#'   \item{deviance_summary}{A five-number summary (Min, 1Q, Median, 3Q, Max) of deviance residuals.}
+#'   \item{summary_table}{A data frame with parameter estimates, standard
+#'   errors, z-values, and p-values.}
+#'   \item{deviance_summary}{A five-number summary (Min, 1Q, Median, 3Q, Max)
+#'   of deviance residuals.}
 #'   \item{mu}{Estimated value of the Normal component mean.}
 #'   \item{sigma}{Estimated value of the Normal component standard deviation.}
 #'   \item{null_deviance}{Null deviance of the model.}
@@ -25,7 +30,7 @@
 #' @export
 summary.cpn <- function(object, ...) {
   beta_hat <- object$coefficients
-  se_hat <- object$se[1:length(beta_hat)]
+  se_hat <- object$se[seq_along(beta_hat)]
 
   z_vals <- beta_hat / se_hat
   p_vals <- 2 * stats::pnorm(-abs(z_vals))
@@ -61,7 +66,8 @@ summary.cpn <- function(object, ...) {
 
 #' Print Method for Summary of CPN Model
 #'
-#' Displays a formatted summary of a fitted `cpn` model object, including parameter estimates,
+#' Displays a formatted summary of a fitted `cpn` model object, including
+#' parameter estimates,
 #' deviance residuals, and model fit statistics.
 #'
 #' @param x An object of class `"summary.cpn"`, as returned by [summary.cpn()].

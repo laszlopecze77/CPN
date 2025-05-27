@@ -150,7 +150,8 @@ cpn <- function(formula,
       log_p0 <- stats::dpois(0, lambda_i)
       return(log(log_p0))
     } else {
-      # Convolution of Poisson and Normal (approximate): use numerical integration or approximation
+      # Convolution of Poisson and Normal (approximate):
+      # use numerical integration or approximation
       # We'll use simplified approximation for residuals:
       expected <- lambda_i * mu_hat
       var <- lambda_i * sigma_hat^2

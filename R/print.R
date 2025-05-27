@@ -1,7 +1,9 @@
 #' Print method for Compound Poisson-Normal model objects
 #'
-#' Displays a concise summary of a fitted Compound Poisson-Normal (CPN) regression model, including
-#' the original function call, estimated coefficients, distribution parameters (`mu` and `sigma`),
+#' Displays a concise summary of a fitted Compound Poisson-Normal (CPN)
+#' regression model, including
+#' the original function call, estimated coefficients, distribution
+#' parameters (`mu` and `sigma`),
 #' residual deviance, degrees of freedom, and AIC.
 #'
 #' @param x An object of class \code{cpn}.
@@ -29,4 +31,3 @@ print.cpn <- function(x, ...) {
 
   invisible(x)
 }
-
