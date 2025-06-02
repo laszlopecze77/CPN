@@ -36,17 +36,17 @@ To use the function, load the package:
 library(CPN)  # Replace with your actual package name
 ```
 
-<!-- # Simulate Example Data -->
+# Simulate Example Data
 
-<!-- ```{r} -->
-<!-- set.seed(123) -->
-<!-- n <- 100 -->
-<!-- x <- rnorm(n) -->
-<!-- lambda <- exp(0.5 + 0.2 * x) -->
-<!-- N <- rpois(n, lambda) -->
-<!-- y <- ifelse(N == 0, 0, rnorm(n, mean = N * 3, sd = sqrt(N) * 2)) -->
-<!-- data <- data.frame(y = y, x = x) -->
-<!-- ``` -->
+```{r}
+set.seed(123)
+n <- 100
+x <- rnorm(n)
+lambda <- exp(0.5 + 0.2 * x)
+N <- rpois(n, lambda)
+y <- ifelse(N == 0, 0, rnorm(n, mean = N * 3, sd = sqrt(N) * 2))
+data <- data.frame(y = y, x = x)
+```
 
 <!-- # Fit the CPN Model -->
 
