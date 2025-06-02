@@ -1,9 +1,0 @@
-memory profiling: GC profiling: line profiling: sample.interval=10000
-#File 1: <expr>
-:1013974:6037650:87256680:2328:"getExprSrcref" "cb$setcurexpr" "cmpCall" "cmp" "h" "tryInline" "cmpCall" "cmp" "genCode" "cmpfun" "compiler:::tryCmpfun" 1#2 "profvis" 
-:1026064:6048279:91147280:1112:"exists" "findCenvVar" "getInlineInfo" "tryInline" "cmpCall" "cmp" "genCode" "cmpCallArgs" "cmpCallSymFun" "cmpCall" "cmp" "cmpSymbolAssign" "h" "tryInline" "cmpCall" "cmp" "h" "tryInline" "cmpCall" "cmp" "genCode" "cmpfun" "compiler:::tryCmpfun" 1#2 "profvis" 
-:1048358:6061051:97114696:1991:"as.character" "profvis" 
-:1061295:6072790:100810640:1139:"exists" "findCenvVar" "getInlineInfo" "tryInline" "cmpCall" "cmp" "h" "tryInline" "cmpCall" "cmp" "genCode" "cmpfun" "compiler:::tryCmpfun" 1#2 "profvis" 
-:1080297:6091810:106186192:1693:"findLocalsList" "funEnv" "make.functionContext" "cmpfun" "compiler:::tryCmpfun" "profvis" 
-:1100992:6097757:110700464:1409:"cb$restorecurloc" "cmp" "cmpSymbolAssign" "h" "tryInline" "cmpCall" "cmp" "h" "tryInline" "cmpCall" "cmp" "genCode" "cmpfun" "compiler:::tryCmpfun" "profvis" 
-:1121759:6115209:116404008:1966:".makeMessage" "message" "value[[3]]" "tryCatchOne" "tryCatchList" "tryCatchList" "tryCatch" "with_profvis_handlers" "profvis" 
