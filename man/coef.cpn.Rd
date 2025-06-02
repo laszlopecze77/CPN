@@ -9,17 +9,18 @@
 \arguments{
 \item{object}{An object of class \code{cpn}.}
 
-\item{full}{Logical. If \code{TRUE} (default), returns both the regression coefficients and the
-estimated distribution parameters \code{mu} and \code{sigma}. If \code{FALSE}, returns only the
-regression coefficients.}
+\item{full}{Logical. If \code{TRUE} (default), returns both the regression
+coefficients and the estimated distribution parameters \code{mu} and
+\code{sigma}. If \code{FALSE}, returns only the regression coefficients.}
 
 \item{...}{Additional arguments (currently ignored).}
 }
 \value{
-A named numeric vector of model coefficients. If \code{full = TRUE}, includes
-\code{mu} and \code{sigma}.
+A named numeric vector of model coefficients. If \code{full = TRUE},
+includes \code{mu} and \code{sigma}.
 }
 \description{
-Returns the estimated regression coefficients from a fitted Compound Poisson-Normal (CPN) model.
-Optionally includes the estimated distribution parameters \code{mu} and \code{sigma}.
+Returns the estimated regression coefficients from a fitted Compound
+Poisson-Normal (CPN) model. Optionally includes the estimated distribution
+parameters \code{mu} and \code{sigma}.
 }

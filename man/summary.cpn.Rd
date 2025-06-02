@@ -7,7 +7,8 @@
 \method{summary}{cpn}(object, ...)
 }
 \arguments{
-\item{object}{An object of class \code{"cpn"}, typically resulting from a call to a CPN regression function.}
+\item{object}{An object of class \code{"cpn"}, typically resulting from a call
+to a CPN regression function.}
 
 \item{...}{Additional arguments (currently ignored).}
 }
@@ -15,8 +16,10 @@
 An object of class \code{"summary.cpn"}, which is a list containing:
 \describe{
 \item{call}{The matched call that generated the model.}
-\item{summary_table}{A data frame with parameter estimates, standard errors, z-values, and p-values.}
-\item{deviance_summary}{A five-number summary (Min, 1Q, Median, 3Q, Max) of deviance residuals.}
+\item{summary_table}{A data frame with parameter estimates, standard
+errors, z-values, and p-values.}
+\item{deviance_summary}{A five-number summary (Min, 1Q, Median, 3Q, Max)
+of deviance residuals.}
 \item{mu}{Estimated value of the Normal component mean.}
 \item{sigma}{Estimated value of the Normal component standard deviation.}
 \item{null_deviance}{Null deviance of the model.}
@@ -27,8 +30,10 @@ An object of class \code{"summary.cpn"}, which is a list containing:
 }
 }
 \description{
-Produces a summary for a fitted \code{cpn} model object, including parameter estimates,
-standard errors, z-values, p-values, deviance residual summaries, and model diagnostics.
+Produces a summary for a fitted \code{cpn} model object, including parameter
+estimates,
+standard errors, z-values, p-values, deviance residual summaries, and model
+diagnostics.
 }
 \seealso{
 \code{\link[=cpn]{cpn()}}, \code{\link[=anova.cpn]{anova.cpn()}}

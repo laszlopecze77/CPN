@@ -7,23 +7,30 @@
 \method{plot}{cpn}(x, which = c("residuals", "qq"), ...)
 }
 \arguments{
-\item{x}{An object of class \code{"cpn"}, typically resulting from a CPN model fitting function.}
+\item{x}{An object of class \code{"cpn"}, typically resulting from a CPN
+model fitting function.}
 
 \item{which}{A character string specifying the type of plot to produce.
-Options are \code{"residuals"} (default) for a residuals vs fitted values plot,
+Options are \code{"residuals"} (default) for a residuals vs fitted values
+plot,
 and \code{"qq"} for a Q-Q plot of deviance residuals.}
 
-\item{...}{Additional graphical parameters passed to the underlying plotting functions.}
+\item{...}{Additional graphical parameters passed to the underlying plotting
+functions.}
 }
 \value{
-This function is called for its side effects and does not return a value.
+This function is called for its side effects and does not return a
+value.
 }
 \description{
-Generates diagnostic plots for a fitted Compound Poisson-Normal (CPN) model object.
-Options include a residuals vs fitted values plot and a Q-Q plot of the deviance residuals.
+Generates diagnostic plots for a fitted Compound Poisson-Normal (CPN) model
+object.
+Options include a residuals vs fitted values plot and a Q-Q plot of the
+deviance residuals.
 }
 \details{
-The residuals vs fitted plot helps assess non-linearity, unequal error variances, and outliers.
+The residuals vs fitted plot helps assess non-linearity, unequal error
+variances, and outliers.
 The Q-Q plot checks for normality of deviance residuals.
 }
 \seealso{

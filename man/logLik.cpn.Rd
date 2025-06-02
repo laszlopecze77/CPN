@@ -7,7 +7,8 @@
 \method{logLik}{cpn}(object, ...)
 }
 \arguments{
-\item{object}{An object of class \code{"cpn"}, typically resulting from a CPN model fitting function.}
+\item{object}{An object of class \code{"cpn"}, typically resulting from a
+CPN model fitting function.}
 
 \item{...}{Additional arguments (currently unused).}
 }

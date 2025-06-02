@@ -14,20 +14,27 @@
 )
 }
 \arguments{
-\item{object}{An object of class \code{cpn}, typically the result of a call to a function fitting a Compound Poisson-Normal regression model.}
+\item{object}{An object of class \code{cpn}, typically the result of a call to a
+function fitting a Compound Poisson-Normal regression model.}
 
-\item{newdata}{An optional data frame in which to look for variables with which to predict. If omitted, the original model data is used.}
+\item{newdata}{An optional data frame in which to look for variables
+with which to predict. If omitted, the original model data is used.}
 
-\item{type}{Type of prediction: \code{"link"} returns the linear predictor \eqn{\eta = X\beta}; \code{"response"} returns the mean response \eqn{E[Y] = \mu \cdot \exp(\eta)}.}
+\item{type}{Type of prediction: \code{"link"} returns the linear
+predictor \eqn{\eta = X\beta}; \code{"response"} returns the mean
+response \eqn{E[Y] = \mu \cdot \exp(\eta)}.}
 
-\item{interval}{Type of interval calculation. Either \code{"none"} (default) or \code{"confidence"} for confidence intervals around the predicted values.}
+\item{interval}{Type of interval calculation. Either \code{"none"} (default)
+or \code{"confidence"} for confidence intervals around the predicted values.}
 
 \item{level}{Confidence level for the interval. Defaults to 0.95.}
 
-\item{...}{Further arguments passed to or from other methods (not currently used).}
+\item{...}{Further arguments passed to or from other methods (not currently
+used).}
 }
 \value{
-If \code{interval = "none"}, returns a numeric vector of predicted values on the specified scale.
+If \code{interval = "none"}, returns a numeric vector of predicted
+values on the specified scale.
 If \code{interval = "confidence"}, returns a data frame with columns:
 \describe{
 \item{\code{fit}}{Predicted value}
@@ -36,13 +43,18 @@ If \code{interval = "confidence"}, returns a data frame with columns:
 }
 }
 \description{
-Computes predictions from a fitted Compound Poisson-Normal (CPN) regression model.
-Supports predictions on the link or response scale, with optional confidence intervals.
+Computes predictions from a fitted Compound Poisson-Normal (CPN) regression
+model.
+Supports predictions on the link or response scale, with optional confidence
+intervals.
 }
 \details{
-For predictions on the response scale with confidence intervals, the standard errors of both the linear predictor and the estimated \code{mu} parameter are combined using the delta method.
+For predictions on the response scale with confidence intervals,
+the standard errors of both the linear predictor and the estimated \code{mu}
+parameter are combined using the delta method.
 
-Factor levels in \code{newdata} are aligned to match those used in the original model fit.
+Factor levels in \code{newdata} are aligned to match those used in the
+original model fit.
 }
 \examples{
 \dontrun{
@@ -52,5 +64,6 @@ predict(fit, newdata = mynewdata, type = "response", interval = "confidence")
 
 }
 \seealso{
-\code{\link{cpn}}, \code{\link{vcov}}, \code{\link{model.matrix}}, \code{\link{predict}}
+\code{\link{cpn}}, \code{\link{vcov}}, \code{\link{model.matrix}},
+\code{\link{predict}}
 }

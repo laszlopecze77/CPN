@@ -15,6 +15,7 @@
 Invisibly returns the \code{summary.cpn} object.
 }
 \description{
-Displays a formatted summary of a fitted \code{cpn} model object, including parameter estimates,
+Displays a formatted summary of a fitted \code{cpn} model object, including
+parameter estimates,
 deviance residuals, and model fit statistics.
 }

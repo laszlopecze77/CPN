@@ -1,0 +1,96 @@
+
+
+
+---
+title: "Compound Poisson-Normal Regression"
+author: "Laszlo Pecze"
+date: "`r Sys.Date()`"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 2
+vignette: >
+  %\VignetteIndexEntry{Compound Poisson-Normal Regression}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#"
+)
+```
+
+# Introduction
+
+This vignette demonstrates how to use the `cpn` function to fit a Compound Poisson-Normal (CPN) regression model. The model is designed for data with a mixture of zeros and continuous values, modeled via a compound Poisson distribution with a Normal component.
+
+# Package Setup
+
+To use the function, load the package:
+
+```{r, eval = FALSE}
+# If not installed:
+# devtools::install(build_vignettes = TRUE)
+library(CPN)  # Replace with your actual package name
+```
+
+<!-- # Simulate Example Data -->
+
+<!-- ```{r} -->
+<!-- set.seed(123) -->
+<!-- n <- 100 -->
+<!-- x <- rnorm(n) -->
+<!-- lambda <- exp(0.5 + 0.2 * x) -->
+<!-- N <- rpois(n, lambda) -->
+<!-- y <- ifelse(N == 0, 0, rnorm(n, mean = N * 3, sd = sqrt(N) * 2)) -->
+<!-- data <- data.frame(y = y, x = x) -->
+<!-- ``` -->
+
+<!-- # Fit the CPN Model -->
+
+<!-- ```{r} -->
+<!-- fit <- cpn(y ~ x, data = data) -->
+<!-- ``` -->
+
+<!-- # Summary of Results -->
+
+<!-- ```{r} -->
+<!-- summary(fit) -->
+<!-- ``` -->
+
+<!-- # Extracting Model Components -->
+
+<!-- ```{r} -->
+<!-- fit$coefficients -->
+<!-- fit$mu -->
+<!-- fit$sigma -->
+<!-- fit$fitted_values[1:10]  # preview only -->
+<!-- ``` -->
+
+<!-- # Diagnostic Plot -->
+
+<!-- ```{r} -->
+<!-- plot(fit$fitted_values, fit$deviance_residuals, -->
+<!--      xlab = "Fitted Values", ylab = "Deviance Residuals", -->
+<!--      main = "Deviance Residuals vs. Fitted Values") -->
+<!-- abline(h = 0, col = "red", lty = 2) -->
+<!-- ``` -->
+
+<!-- # Advanced Options -->
+
+<!-- Use a larger `k_max` for more accurate approximation: -->
+
+<!-- ```{r, eval = FALSE} -->
+<!-- fit2 <- cpn(y ~ x, data = data, k_max = 50) -->
+<!-- ``` -->
+
+<!-- # Conclusion -->
+
+<!-- The `cpn` function provides a flexible regression framework for count-inflated and semi-continuous data using a compound Poisson-Normal distribution. -->
+
+<!-- # References -->
+
+<!-- - Lambert, D. (1992). Zero-Inflated Poisson Regression. *Technometrics*, 34(1), 1–14. -->
+<!-- - Mullahy, J. (1986). Specification and testing of some modified count data models. *Journal of Econometrics*, 33(3), 341–365. -->

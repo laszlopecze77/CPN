@@ -7,7 +7,8 @@
 \method{residuals}{cpn}(object, type = c("deviance", "raw"), ...)
 }
 \arguments{
-\item{object}{An object of class \code{"cpn"}, typically produced by a CPN model fitting function.}
+\item{object}{An object of class \code{"cpn"}, typically produced by a
+CPN model fitting function.}
 
 \item{type}{Character string indicating the type of residuals to return.
 Choices are \code{"deviance"} (default) or \code{"raw"}.}
@@ -15,10 +16,12 @@ Choices are \code{"deviance"} (default) or \code{"raw"}.}
 \item{...}{Additional arguments (currently unused).}
 }
 \value{
-A numeric vector of residuals. Returns deviance residuals if \code{type = "deviance"},
+A numeric vector of residuals. Returns deviance
+residuals if \code{type = "deviance"},
 or raw residuals (observed - fitted) if \code{type = "raw"}.
 }
 \description{
-This method extracts residuals from a fitted model object of class \code{"cpn"}.
+This method extracts residuals from a fitted model object of
+class \code{"cpn"}.
 Supports both raw and deviance residuals.
 }

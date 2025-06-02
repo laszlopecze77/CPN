@@ -2,45 +2,41 @@
 % Please edit documentation in R/cpn_regression_neg_log_likelihood.R
 \name{cpn_regression_neg_log_likelihood}
 \alias{cpn_regression_neg_log_likelihood}
-\title{Negative Log-Likelihood for Compound Poisson-Normal (CPN) Regression}
+\title{Negative Log-Likelihood for Compound Poisson-Normal Regression}
 \usage{
-cpn_regression_neg_log_likelihood(beta_mu_sigma, X, y, Kmax = 10)
+cpn_regression_neg_log_likelihood(beta_mu_sigma, X, y, k_max = 10)
 }
 \arguments{
-\item{beta_mu_sigma}{Numeric vector. The parameter vector consisting of:
-\itemize{
-\item Regression coefficients \code{beta} for modeling \code{lambda} (length = \code{ncol(X)})
-\item Scalar mean \code{mu} of the normal components
-\item Scalar standard deviation \code{sigma} of the normal components
-}}
+\item{beta_mu_sigma}{Numeric vector. Contains the regression coefficients
+for the log-link Poisson mean (\code{lambda}), followed by the mean (\code{mu})
+and standard deviation (\code{sigma}) of the Normal components.}
 
-\item{X}{Numeric matrix of covariates, with one row per observation.}
+\item{X}{Numeric matrix. The design matrix for the regression model
+(rows = observations, columns = covariates).}
 
-\item{y}{Numeric vector of response values, assumed to follow a CPN distribution.}
+\item{y}{Numeric vector. The observed responses.}
 
-\item{Kmax}{Integer. Maximum number of Poisson terms to include when approximating the likelihood. Controls computational accuracy and speed.}
+\item{k_max}{Integer. Maximum number of Poisson events to consider for
+truncation in likelihood approximation (default is 10).}
 }
 \value{
-The negative log-likelihood (scalar). Returns \code{Inf} if \code{sigma <= 0} or
-if any observation has a likelihood of zero (to avoid \code{log(0)}).
+A numeric value giving the negative log-likelihood. Returns
+\code{Inf} if invalid parameters are provided or numerical issues occur.
 }
 \description{
-Computes the negative log-likelihood of a regression model where the response variable
-follows a Compound Poisson-Normal (CPN) distribution. The Poisson rate parameter \code{lambda}
-is modeled via a log-linear regression on covariates, and the normal components share a
-common mean \code{mu} and standard deviation \code{sigma}.
+Computes the negative log-likelihood for a regression model where
+the response is assumed to follow a Compound Poisson-Normal distribution.
 }
 \details{
-The model assumes that the response \code{y} is a sum of a Poisson-distributed number
-of i.i.d. normal variables. The Poisson intensity is linked to predictors via
-\code{lambda_i = exp(X \%*\% beta)}. The likelihood is truncated by computing a finite sum
-over a range of \code{k} values up to \code{Kmax}.
+The function computes the likelihood for each observation as a
+weighted sum over a finite number of Poisson-Normal mixtures,
+truncating at \code{k_max}. If any resulting likelihood is zero, the function
+returns \code{Inf} to penalize the parameter set.
 }
 \examples{
-set.seed(123)
-X <- matrix(rnorm(20), ncol = 2)
-y <- rpois(10, lambda = exp(X \%*\% c(0.5, -0.3))) * 2 + rnorm(10, 0, 1)
-params <- c(0.5, -0.3, 2, 1)
-cpn_regression_neg_log_likelihood(params, X, y)
+X <- matrix(c(1, 2, 3, 4), ncol = 2)
+y <- c(0.5, 1.5)
+beta_mu_sigma <- c(0.1, 0.2, 1, 0.5)
+cpn_regression_neg_log_likelihood(beta_mu_sigma, X, y, k_max = 10)
 
 }

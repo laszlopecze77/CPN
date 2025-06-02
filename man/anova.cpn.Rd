@@ -7,14 +7,17 @@
 \method{anova}{cpn}(object, ..., test = "Chisq")
 }
 \arguments{
-\item{object}{An object of class \code{cpn}, typically the result of a call to \code{\link[=cpn]{cpn()}}.}
+\item{object}{An object of class \code{cpn}, typically the result of a call
+to \code{\link[=cpn]{cpn()}}.}
 
 \item{...}{Optional additional objects of class \code{cpn} for model comparison.}
 
-\item{test}{A character string specifying the test statistic. Currently only \code{"Chisq"} is supported.}
+\item{test}{A character string specifying the test statistic. Currently only
+\code{"Chisq"} is supported.}
 }
 \value{
-An object of class \code{"anova"} inheriting from \code{"data.frame"}, containing:
+An object of class \code{"anova"} inheriting from \code{"data.frame"},
+containing:
 \itemize{
 \item If one model is provided: sequential deviance table by added terms.
 \item If multiple models are provided: deviance comparison between models.

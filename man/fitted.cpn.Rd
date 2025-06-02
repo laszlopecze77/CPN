@@ -7,7 +7,8 @@
 \method{fitted}{cpn}(object, ...)
 }
 \arguments{
-\item{object}{An object of class \code{"cpn"}, typically returned by a model fitting function for the Compound Poisson-Normal regression.}
+\item{object}{An object of class \code{"cpn"}, typically returned by a
+model fitting function for the Compound Poisson-Normal regression.}
 
 \item{...}{Additional arguments (currently unused).}
 }
@@ -15,5 +16,6 @@
 A numeric vector of fitted values.
 }
 \description{
-This method extracts the fitted values from a model object of class \code{"cpn"}.
+This method extracts the fitted values from a model object of
+class \code{"cpn"}.
 }

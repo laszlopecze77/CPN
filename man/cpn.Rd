@@ -2,61 +2,82 @@
 % Please edit documentation in R/cpn.R
 \name{cpn}
 \alias{cpn}
-\title{Fit a Compound Poisson-Normal (CPN) Regression Model}
+\title{Compound Poisson-Normal Regression}
 \usage{
 cpn(
   formula,
-  data,
+  data = NULL,
   mu_init = NULL,
   sigma_init = NULL,
   epsilon = 1e-06,
-  Kmax = 10
+  k_max = 10
 )
 }
 \arguments{
-\item{formula}{A formula specifying the regression model.}
+\item{formula}{A formula specifying the model, e.g., \code{y ~ x1 + x2}.}
 
-\item{data}{A data frame containing the variables in the model.}
+\item{data}{An optional data frame, list, or environment containing the
+variables in the model. If not found in \code{data}, the variables are
+taken from the environment from which \code{cpn} is called.}
 
-\item{mu_init}{Optional initial value for the normal component mean.}
+\item{mu_init}{Optional initial value for the Normal mean parameter.
+If \code{NULL}, it is set to the sample mean of \code{y}.}
 
-\item{sigma_init}{Optional initial value for the normal component standard deviation.}
+\item{sigma_init}{Optional initial value for the Normal standard deviation.
+If \code{NULL}, it is set to the sample standard deviation of \code{y}.}
 
-\item{epsilon}{Numeric. Tail probability threshold for Poisson truncation (default is 1e-6).}
+\item{epsilon}{A small positive value used for numerical tolerance in
+convergence checks. Default is \code{1e-6}.}
 
-\item{Kmax}{Integer. Maximum number of Poisson terms to include when approximating the likelihood. Controls computational accuracy and speed.}
+\item{k_max}{Upper limit of summation used in approximating the Poisson
+convolution. Should be between 10 and 100. Default is 10.}
 }
 \value{
-An object of class \code{"cpn"} containing:
-\item{coefficients}{Estimated regression coefficients for the Poisson component}
-\item{mu, sigma}{Estimated normal component parameters}
-\item{se}{Standard errors of all parameters}
-\item{formula, data}{Input formula and data}
-\item{fitted_values}{Fitted means of the CPN distribution}
-\item{deviance_residuals}{Deviance residuals}
-\item{null_deviance, residual_deviance}{Deviance statistics}
-\item{df_null, df_residual}{Degrees of freedom for null and fitted model}
-\item{aic}{Akaike Information Criterion value}
-\item{neg_log_likelihood}{Value of the minimized negative log-likelihood}
+An object of class \code{"cpn"} containing the following components:
+\item{coefficients}{Estimated regression coefficients.}
+\item{mu}{Estimated mean of the Normal component.}
+\item{sigma}{Estimated standard deviation of the Normal component.}
+\item{se}{Standard errors of the estimated parameters.}
+\item{model}{The model frame used.}
+\item{terms}{The terms object from the model.}
+\item{formula}{The model formula.}
+\item{data}{The original data passed in.}
+\item{deviance_residuals}{Vector of deviance residuals.}
+\item{fitted_values}{Fitted values (Poisson mean times Normal mean).}
+\item{neg_log_likelihood}{Negative log-likelihood at the optimum.}
+\item{null_deviance}{Null model deviance.}
+\item{residual_deviance}{Residual deviance of the fitted model.}
+\item{df_null}{Degrees of freedom for the null model.}
+\item{df_residual}{Degrees of freedom for the fitted model.}
+\item{aic}{Akaike Information Criterion.}
+\item{call}{The matched function call.}
 }
 \description{
-Fits a generalized regression model where the response is assumed to follow a
-Compound Poisson-Normal (CPN) distribution. The Poisson intensity is modeled via
-a log-link function with covariates.
+Fits a Compound Poisson-Normal (CPN) regression model to the response
+variable using maximum likelihood estimation via the Nelder-Mead method.
 }
 \details{
-The CPN model treats each observation as a sum of a Poisson-distributed number of
-i.i.d. normal variables. This function fits the model using maximum likelihood,
-computes standard errors from the Hessian (via finite differences),
-and calculates diagnostics such as deviance and AIC.
+The function fits a regression model where the response is assumed to follow
+a Compound Poisson-Normal distribution. The model estimates regression
+coefficients for the Poisson intensity, and mean and standard deviation of
+the Normal component.
+
+The optimization is performed via maximum likelihood using the Nelder-Mead
+method. Standard errors are computed via the observed information matrix
+using numerical Hessian. If the Hessian is singular or not positive
+definite, a warning is issued and standard errors are returned as \code{NA}.
 }
 \examples{
-df <- data.frame(x1 = rnorm(100), x2 = runif(100))
-df$y <- rpois(100, lambda = exp(0.5 * df$x1 - 0.3 * df$x2)) * 2 + rnorm(100)
-model <- cpn(y ~ x1 + x2, data = df)
-summary(model)
-
+\dontrun{
+  set.seed(123)
+  n <- 100
+  x <- rnorm(n)
+  lambda <- exp(0.5 + 0.2 * x)
+  N <- rpois(n, lambda)
+  y <- ifelse(N == 0, 0, rnorm(n, mean = N * 3, sd = sqrt(N) * 2))
+  data <- data.frame(y = y, x = x)
+  fit <- cpn(y ~ x, data = data)
+  summary(fit)
 }
-\seealso{
-\code{\link{cpn_regression_neg_log_likelihood}}
+
 }

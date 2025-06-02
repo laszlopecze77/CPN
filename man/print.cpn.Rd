@@ -15,7 +15,9 @@
 The input object \code{x}, invisibly.
 }
 \description{
-Displays a concise summary of a fitted Compound Poisson-Normal (CPN) regression model, including
-the original function call, estimated coefficients, distribution parameters (\code{mu} and \code{sigma}),
+Displays a concise summary of a fitted Compound Poisson-Normal (CPN)
+regression model, including
+the original function call, estimated coefficients, distribution
+parameters (\code{mu} and \code{sigma}),
 residual deviance, degrees of freedom, and AIC.
 }

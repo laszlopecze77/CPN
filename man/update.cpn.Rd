@@ -7,19 +7,24 @@
 \method{update}{cpn}(object, formula., data = NULL, ...)
 }
 \arguments{
-\item{object}{An object of class \code{"cpn"}, typically produced by a CPN model fitting function.}
+\item{object}{An object of class \code{"cpn"}, typically produced by a CPN
+model fitting function.}
 
 \item{formula.}{A formula object specifying the new model formula.}
 
-\item{data}{A data frame containing the new data. If \code{NULL}, the original data from the object is used.}
+\item{data}{A data frame containing the new data. If \code{NULL},
+the original data from the object is used.}
 
-\item{...}{Additional arguments passed to the underlying model fitting function.}
+\item{...}{Additional arguments passed to the underlying model fitting
+function.}
 }
 \value{
-A new \code{"cpn"} object fitted with the updated formula and/or data.
+A new \code{"cpn"} object fitted with the updated formula
+and/or data.
 }
 \description{
-Updates a fitted Compound Poisson-Normal (CPN) model by changing the model formula or data.
+Updates a fitted Compound Poisson-Normal (CPN) model by changing the model
+formula or data.
 }
 \seealso{
 \code{\link{cpn}}

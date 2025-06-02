@@ -7,11 +7,13 @@
 \method{AIC}{cpn}(object, ..., k = 2)
 }
 \arguments{
-\item{object}{An object of class \code{"cpn"}, typically produced by a CPN model fitting function.}
+\item{object}{An object of class \code{"cpn"}, typically produced by a CPN
+model fitting function.}
 
 \item{...}{Additional arguments (currently unused).}
 
-\item{k}{Numeric penalty per parameter; the default is \code{2}, corresponding to the traditional AIC.}
+\item{k}{Numeric penalty per parameter; the default is \code{2},
+corresponding to the traditional AIC.}
 }
 \value{
 A numeric value representing the AIC of the model.
