@@ -19,5 +19,6 @@ Imports:
     stats
 Suggests: 
     knitr,
+    lintr,
     rmarkdown
 VignetteBuilder: knitr
