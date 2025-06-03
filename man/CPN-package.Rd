@@ -4,12 +4,12 @@
 \name{CPN-package}
 \alias{CPN}
 \alias{CPN-package}
-\title{CPN: What the Package Does (One Line, Title Case)}
+\title{CPN: Compound Poisson-Normal Regression}
 \description{
-What the package does (one paragraph).
+Provides tools to fit regression models when the outcome follows a Compound Poisson-Normal (CPN) distribution. The model assumes a Poisson-distributed count of latent normal variables whose sum is observed, allowing joint modeling of zero inflation and continuous positive values. Includes methods for estimation, inference, simulation, and model diagnostics.
 }
 \author{
-\strong{Maintainer}: First Last \email{first.last@example.com} (\href{https://orcid.org/YOUR-ORCID-ID}{ORCID})
+\strong{Maintainer}: Laszlo Pecze \email{first.last@example.com} (\href{https://orcid.org/YOUR-ORCID-ID}{ORCID})
 
 }
 \keyword{internal}

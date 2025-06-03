@@ -1,3 +1,4 @@
+
 #' Recover Data for `cpn` Model Objects
 #'
 #' This method is used by the \pkg{emmeans} package to recover the data and
@@ -14,7 +15,7 @@
 #' @export
 #'
 recover_data.cpn <- function(object, ...) {
-  emmeans:::recover_data.call(
+  emmeans::recover_data(
     object$call,
     trms = delete.response(object$terms),
     na.action = na.omit,

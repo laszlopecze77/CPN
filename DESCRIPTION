@@ -12,8 +12,8 @@ Description: Provides tools to fit regression models when the outcome follows a
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.1
 Imports: 
+    emmeans,
     graphics,
     numDeriv,
     stats
@@ -21,3 +21,4 @@ Suggests:
     knitr,
     rmarkdown
 VignetteBuilder: knitr
+RoxygenNote: 7.3.2
