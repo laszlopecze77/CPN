@@ -4,7 +4,7 @@
 \alias{emm_basis.cpn}
 \title{Basis for Estimated Marginal Means for \code{cpn} Model}
 \usage{
-emm_basis.cpn(object, trms, xlev, grid, ...)
+\method{emm_basis}{cpn}(object, trms, xlev, grid, ...)
 }
 \arguments{
 \item{object}{A fitted model object of class \code{cpn}.}
