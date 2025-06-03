@@ -1,9 +1,15 @@
 Package: CPN
 Title: Compound Poisson-Normal Regression
 Version: 0.0.0.9000
-Authors@R: 
+Authors@R: c(
     person("Laszlo", "Pecze", , "first.last@example.com", role = c("aut", "cre"),
-           comment = c(ORCID = "YOUR-ORCID-ID"))
+           comment = c(ORCID = "YOUR-ORCID-ID")),
+    person(given = "François",
+           family = "Collin",
+           role = "ctb",
+           email = "fca.collin@gmail.com",
+           comment = c(ORCID = "0000-0003-0524-5755"))
+           )
 Description: Provides tools to fit regression models when the outcome follows a 
   Compound Poisson-Normal (CPN) distribution. The model assumes a 
   Poisson-distributed count of latent normal variables whose sum is observed, 
