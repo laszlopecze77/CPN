@@ -1,9 +1,18 @@
 Package: CPN
 Title: Compound Poisson-Normal Regression
 Version: 0.0.0.9000
-Authors@R: 
-    person("Laszlo", "Pecze", , "first.last@example.com", role = c("aut", "cre"),
-           comment = c(ORCID = "YOUR-ORCID-ID"))
+Authors@R: c(
+    person(given ="Laszlo",
+           family =  "Pecze",
+           role = c("aut", "cre"),
+           email = "laszlopecze77@gmail.com", 
+           comment = c(ORCID = "0000-0002-7036-5756")),
+    person(given = "François",
+           family = "Collin",
+           role = "ctb",
+           email = "fca.collin@gmail.com",
+           comment = c(ORCID = "0000-0003-0524-5755"))
+           )
 Description: Provides tools to fit regression models when the outcome follows a 
   Compound Poisson-Normal (CPN) distribution. The model assumes a 
   Poisson-distributed count of latent normal variables whose sum is observed, 
@@ -19,6 +28,7 @@ Imports:
     stats
 Suggests: 
     knitr,
+    lintr,
     rmarkdown
 VignetteBuilder: knitr
 RoxygenNote: 7.3.2
