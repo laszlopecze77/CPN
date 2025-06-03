@@ -7,6 +7,6 @@
 # * https://testthat.r-lib.org/articles/special-files.html
 
 library(testthat)
-library(projectPackage)
+library(CPN)
 
-test_check("projectPackage")
+test_check("CPN")

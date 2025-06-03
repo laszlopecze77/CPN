@@ -11,14 +11,13 @@
 #' @return An object containing the recovered data and terms, suitable for use
 #'   by \pkg{emmeans}.
 #'
-#' @importFrom emmeans recover_data
 #' @export
 #'
 recover_data.cpn <- function(object, ...) {
   emmeans::recover_data(
     object$call,
-    trms = delete.response(object$terms),
-    na.action = na.omit,
+    trms = stats::delete.response(object$terms),
+    na.action = stats::na.omit,
     data = object$data
   )
 }
