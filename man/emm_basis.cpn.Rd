@@ -4,16 +4,19 @@
 \alias{emm_basis.cpn}
 \title{Basis for Estimated Marginal Means for \code{cpn} Model}
 \usage{
-\method{emm_basis}{cpn}(object, trms, xlev, grid, ...)
+emm_basis.cpn(object, trms, xlev, grid, ...)
 }
 \arguments{
 \item{object}{A fitted model object of class \code{cpn}.}
 
-\item{trms}{Terms object, usually derived from \code{delete.response(terms(object))}.}
+\item{trms}{Terms object, usually derived
+from \code{delete.response(terms(object))}.}
 
-\item{xlev}{A list of levels for factors, typically from the data used in fitting.}
+\item{xlev}{A list of levels for factors, typically from the data used in
+fitting.}
 
-\item{grid}{A reference grid (data frame) over which to compute estimated means.}
+\item{grid}{A reference grid (data frame) over which to
+ompute estimated means.}
 
 \item{...}{Additional arguments (currently ignored).}
 }
@@ -30,8 +33,12 @@ A list with components used by \pkg{emmeans}:
 }
 }
 \description{
-This function provides the required components for computing estimated marginal means
-from a fitted Compound Poisson-Normal (CPN) model using the \pkg{emmeans} package.
-It extracts the model matrix, fixed-effect estimates, and covariance matrix, and
-provides information about degrees of freedom and transformation on the response scale.
+This function provides the required components for computing estimated
+marginal means
+from a fitted Compound Poisson-Normal (CPN) model using the \pkg{emmeans}
+package.
+It extracts the model matrix, fixed-effect estimates, and covariance matrix,
+and
+provides information about degrees of freedom and transformation on the
+response scale.
 }

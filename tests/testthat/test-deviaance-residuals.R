@@ -1,6 +1,5 @@
 # Assumes cpn() is already defined in your environment
 
-
 # Load required packages
 if (!requireNamespace("testthat", quietly = TRUE)) install.packages("testthat")
 library(testthat)
@@ -14,73 +13,33 @@ mu_true <- 1
 sigma_true <- 2
 
 
-
 k <- rpois(n, lambda)
-
 y <- numeric(n)
 
 
 
 for (i in 1:n) {
-
   if (k[i] == 0) {
-
     y[i] <- 0
-
   } else {
-
     y[i] <- sum(rnorm(k[i], mu_true, sigma_true))
-
   }
-
 }
-
-
 
 test_data <- data.frame(y = y, x = x)
 
-
-
-plot(test_data$x, test_data$y,
-
-     xlab = "x",
-
-     ylab = "y",
-
-     main = "Simulated Compound Poisson-Normal Data",
-
-     pch = 16,
-
-     col = "darkblue")
-
-
-
 # Fit the model
-
 fit <- cpn(y ~ x, data = test_data)
-
-
 
 # === TESTS ===
 
-
-
 # 1. Residual deviance equals sum of squared deviance residuals
-
 test_that("Residual deviance matches sum of squared deviance residuals", {
-
   expect_equal(sum(fit$deviance_residuals^2), fit$residual_deviance, tolerance = 1e-6)
-
 })
 
 
-
-
-
 # 2. Signs of residuals are consistent with observed - fitted
-
 test_that("Signs of residuals are consistent with observed - fitted", {
-
   expect_true(mean(sign(y - fit$fitted_values) == sign(fit$deviance_residuals)) > 0.98)
-
 })
