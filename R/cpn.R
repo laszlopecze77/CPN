@@ -145,17 +145,20 @@ cpn <- function(formula,
   sigma_hat <- beta_hat["sigma"]
 
   # Compute individual log-likelihood contributions
-  loglik_obs <- function(y_i, lambda_i) {
+  loglik_obs <- function(y_i,
+                         lambda_i,
+                         mu_hat,
+                         sigma_hat,
+                         k_max = k_max) {
     if (y_i == 0) {
-      log_p0 <- stats::dpois(0, lambda_i)
-      return(log(log_p0))
+      return(log(dpois(0, lambda_i)))
     } else {
-      # Convolution of Poisson and Normal (approximate):
-      # use numerical integration or approximation
-      # We'll use simplified approximation for residuals:
-      expected <- lambda_i * mu_hat
-      var <- lambda_i * sigma_hat^2
-      return(stats::dnorm(y_i, mean = expected, sd = sqrt(var), log = TRUE))
+      k_vals <- 1:k_max
+      pois_weights <- dpois(k_vals, lambda_i)
+      norm_vals <- dnorm(y_i,
+                         mean = k_vals * mu_hat,
+                         sd = sqrt(k_vals) * sigma_hat)
+      return(log(sum(pois_weights * norm_vals)))
     }
   }
 
@@ -167,7 +170,7 @@ cpn <- function(formula,
 
   dev_res <- numeric(length(y))
   for (i in seq_along(y)) {
-    ll_hat <- loglik_obs(y[i], lambda_hat[i])
+    ll_hat <- loglik_obs(y[i], lambda_hat[i], mu_hat, sigma_hat, k_max)
     ll_sat <- loglik_saturated(y[i])
     diff <- y[i] - lambda_hat[i] * mu_hat
     dev_res[i] <- sign(diff) * sqrt(2 * (ll_sat - ll_hat))
