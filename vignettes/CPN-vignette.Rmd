@@ -149,5 +149,10 @@ The `cpnreg` package enables effective modeling of semicontinuous data using the
 
 # References
 
-- Abraão D. C. Nascimento, Leandro C. Rêgo, Raphaela L. B. A. Nascimento. Compound truncated Poisson normal distribution: Mathematical properties and Moment estimation. Inverse Problems and Imaging, 2019, 13(4): 787-803. doi: 10.3934/ipi.2019036
-- Mullahy, J. (1986). Specification and testing of some modified count data models. *Journal of Econometrics*, 33(3), 341–365.
+- Nascimento, A. D. C., Rêgo, L. C., & Nascimento, R. L. B. A. (2019). Compound truncated Poisson normal distribution: Mathematical properties and moment estimation. Inverse Problems and Imaging, 13(4), 787–803. https://doi.org/10.3934/ipi.2019036
+- Hu, H., Wang, X., Feng, S., Xu, Z., Liu, J., Heidrich-O'Hare, E., Chen, Y., Yue, M., Zeng, L., Rong, Z., Chen, T., Billiar, T., Ding, Y., Huang, H., Duerr, R. H., & Chen, W. (2024). A unified model-based framework for doublet or multiplet detection in single-cell multiomics data. Nature Communications, 15(1), 5562. https://doi.org/10.1038/s41467-024-49448-x
+- Raqab, M. Z., Kundu, D., & Al-Awadhi, F. A. (2021). Compound zero-truncated Poisson normal distribution and its applications. Communications in Statistics-Theory and Methods, 50(13), 3030-3050.
+
+
+
+
