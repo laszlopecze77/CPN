@@ -34,7 +34,7 @@ distribution with a Normal component.
 To use the function, load the package:
 
 ```{r}
-library(CPN)  # Replace with your actual package name
+library(CPN)
 ```
 
 # Simulating Data
