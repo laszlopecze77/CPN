@@ -4,7 +4,7 @@ author: "Laszlo Pecze"
 date: "`r Sys.Date()`"
 bibliography: references.bib
 nocite: |
-  @Nascimento2019, @mullahy1986
+  @Nascimento2019, @hu2024, @raqab2021
 output:
   rmarkdown::html_vignette:
     toc: true
