@@ -28,7 +28,7 @@
 #'   \item{\code{dfargs}}{Arguments to \code{dffun}.}
 #'   \item{\code{misc}}{Miscellaneous information including link function details.}
 #' }
-#'
+#' @importFrom stats vcov
 #' @export
 emm_basis.cpn <- function(object, trms, xlev, grid, ...) {
   # Construct model matrix from reference grid
