@@ -11,6 +11,7 @@
 #' @return An object containing the recovered data and terms, suitable for use
 #'   by \pkg{emmeans}.
 #'
+#' @importFrom emmeans recover_data
 #' @export
 #'
 recover_data.cpn <- function(object, ...) {

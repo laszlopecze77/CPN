@@ -4,7 +4,7 @@
 \alias{recover_data.cpn}
 \title{Recover Data for \code{cpn} Model Objects}
 \usage{
-recover_data.cpn(object, ...)
+\method{recover_data}{cpn}(object, ...)
 }
 \arguments{
 \item{object}{A fitted model object of class \code{cpn}.}
