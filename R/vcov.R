@@ -50,7 +50,8 @@ vcov.cpn <- function(object, ...) {
     cpn_regression_neg_log_likelihood,
     x = full_params,
     X = stats::model.matrix(object$formula, object$data),
-    y = stats::model.response(stats::model.frame(object$formula, object$data))
+    y = stats::model.response(stats::model.frame(object$formula, object$data)),
+    k_max = object$k_max
   )
 
   # Check Hessian validity

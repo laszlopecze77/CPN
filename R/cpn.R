@@ -44,6 +44,7 @@
 #' \item{df_null}{Degrees of freedom for the null model.}
 #' \item{df_residual}{Degrees of freedom for the fitted model.}
 #' \item{aic}{Akaike Information Criterion.}
+#' \item{k_max}{Value used to truncate the Poisson convolution sum.}
 #' \item{call}{The matched function call.}
 #'
 #' @examples
@@ -220,6 +221,7 @@ cpn <- function(formula,
     df_null = df_null,
     df_residual = df_residual,
     aic = aic_val,
+    k_max = k_max,
     call = match.call()
   ), class = "cpn")
 }

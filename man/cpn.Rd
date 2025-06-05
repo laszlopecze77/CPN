@@ -50,6 +50,7 @@ An object of class \code{"cpn"} containing the following components:
 \item{df_null}{Degrees of freedom for the null model.}
 \item{df_residual}{Degrees of freedom for the fitted model.}
 \item{aic}{Akaike Information Criterion.}
+\item{k_max}{Value used to truncate the Poisson convolution sum.}
 \item{call}{The matched function call.}
 }
 \description{
