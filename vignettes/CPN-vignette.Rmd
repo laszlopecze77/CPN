@@ -1,8 +1,10 @@
-
 ---
 title: "Compound Poisson-Normal Regression"
 author: "Laszlo Pecze"
 date: "`r Sys.Date()`"
+bibliography: references.bib
+nocite: |
+  @Nascimento2019, @hu2024, @raqab2021
 output:
   rmarkdown::html_vignette:
     toc: true
@@ -13,7 +15,7 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-```{r setup, include = FALSE}
+```{r setup, include=FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#"
@@ -22,28 +24,31 @@ knitr::opts_chunk$set(
 
 # Introduction
 
-This vignette demonstrates how to use the `cpn` function to fit a Compound Poisson-Normal (CPN) regression model. The model is designed for data with a mixture of zeros and continuous values, modeled via a compound Poisson distribution with a Normal component.
+This vignette demonstrates how to use the `cpn` function to fit a Compound
+Poisson-Normal (CPN) regression model. The model is designed for data with a
+mixture of zeros and continuous values, modeled via a compound Poisson
+distribution with a Normal component.
 
 # Package Setup
 
 To use the function, load the package:
 
-```{r, eval = T}
-
-#devtools::install_github("laszlopecze77/CPN", dependencies = TRUE)
-library(CPN)  # Replace with your actual package name
+```{r}
+library(CPN)
 ```
 
 # Simulating Data
 
 ```{r simu, message=FALSE, warning=FALSE}
-
 set.seed(123)
 
-simulate_cpn_data <- function(n = 200, beta = c(0.5, -0.3, 0.7), mu = 2, sigma = 1) {
+simulate_cpn_data <- function(n = 200,
+                              beta = c(0.5, -0.3, 0.7),
+                              mu = 2,
+                              sigma = 1) {
   x1 <- factor(sample(c("A", "B"), size = n, replace = TRUE))  # Categorical
   x2 <- rnorm(n)  # Continuous
-  X <- model.matrix(~ x1 + x2)
+  X <- model.matrix(~ x1 + x2) # nolint
   eta <- X %*% beta
   lambda <- exp(eta)
   y <- numeric(n)
@@ -57,21 +62,22 @@ simulate_cpn_data <- function(n = 200, beta = c(0.5, -0.3, 0.7), mu = 2, sigma =
 }
 
 data <- simulate_cpn_data()
+head(data)
 ```
-
 
 # Plot the simulated data
 
 ```{r simuplot, message=FALSE, warning=FALSE}
 # Scatter plot of y vs x2, colored by x1
 colors <- c("A" = "blue", "B" = "red")
-plot(data$x2, data$y,
-     col = colors[data$x1],
-     pch = 19, xlab = "x2", ylab = "y",
-     main = "Scatter Plot of y vs x2 \n (colored by x1)")
+plot(
+  data$x2, data$y,
+  col = colors[data$x1],
+  pch = 19, xlab = "x2", ylab = "y",
+  main = "Scatter Plot of y vs x2 \n (colored by x1)"
+)
 legend("topright", legend = levels(data$x1), col = colors, pch = 19)
 ```
-
 
 # Fit the CPN Model
 
@@ -94,14 +100,12 @@ fit$sigma
 fit$fitted_values[1:10]  # preview only
 ```
 
-
 # Coefficients and Interpretation
 
 ```{r coef}
 coef(fit)
-coef(fit, full = F)  # Includes only linear predictors
+coef(fit, full = FALSE)  # Includes only linear predictors
 ```
-
 
 # Diagnostics and Residuals
 
@@ -131,7 +135,6 @@ anova(fit)        # Model summary
 # Prediction
 
 ```{r predict}
-
 # Original data
 predict(fit, type = "response")[1:5]
 predict(fit, type = "response", interval = "confidence")[1:5, ]
@@ -139,20 +142,14 @@ predict(fit, type = "response", interval = "confidence")[1:5, ]
 # New data
 new_df <- data.frame(x1 = c("A", "A", "B", "B"), x2 = c(-0.5, -0.2, -0.3, -0.3))
 predict(fit, newdata = new_df, type = "response", interval = "confidence")        
-
 ```
 
 # Conclusion
 
-The `cpnreg` package enables effective modeling of semicontinuous data using the Compound Poisson-Normal model. It supports flexible model specification, S3 methods for diagnostics and inference, and prediction on new data. For more advanced use, refer to the function documentation or the package reference manual.
-
+The `cpnreg` package enables effective modeling of semicontinuous data using the
+Compound Poisson-Normal model. It supports flexible model specification, S3
+methods for diagnostics and inference, and prediction on new data. For more
+advanced use, refer to the function documentation or the package reference
+manual.
 
 # References
-
-- Nascimento, A. D. C., Rêgo, L. C., & Nascimento, R. L. B. A. (2019). Compound truncated Poisson normal distribution: Mathematical properties and moment estimation. Inverse Problems and Imaging, 13(4), 787–803. https://doi.org/10.3934/ipi.2019036
-- Hu, H., Wang, X., Feng, S., Xu, Z., Liu, J., Heidrich-O'Hare, E., Chen, Y., Yue, M., Zeng, L., Rong, Z., Chen, T., Billiar, T., Ding, Y., Huang, H., Duerr, R. H., & Chen, W. (2024). A unified model-based framework for doublet or multiplet detection in single-cell multiomics data. Nature Communications, 15(1), 5562. https://doi.org/10.1038/s41467-024-49448-x
-- Raqab, M. Z., Kundu, D., & Al-Awadhi, F. A. (2021). Compound zero-truncated Poisson normal distribution and its applications. Communications in Statistics-Theory and Methods, 50(13), 3030-3050.
-
-
-
-

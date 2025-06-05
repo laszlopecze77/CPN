@@ -1,5 +1,13 @@
 # CPN
 
+## Installation
+
+```r
+devtools::install_github("laszlopecze77/CPN", dependencies = TRUE)
+```
+
+## Development
+
 Development dependencies:
 
 - R version >= 4.5.0
