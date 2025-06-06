@@ -42,7 +42,7 @@
 #' \item{residual_deviance}{Residual deviance of the fitted model.}
 #' \item{df_null}{Degrees of freedom for the null model.}
 #' \item{df_residual}{Degrees of freedom for the fitted model.}
-#' \item{aic}{Akaike Information Criterion.}
+#' \item{k_max}{Value used to truncate the Poisson convolution sum.}
 #' \item{call}{The matched function call.}
 #'
 #' @references
