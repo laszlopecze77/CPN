@@ -22,12 +22,63 @@ knitr::opts_chunk$set(
 )
 ```
 
+
+
+
 # Introduction
 
-This vignette demonstrates how to use the `cpn` function to fit a Compound
-Poisson-Normal (CPN) regression model. The model is designed for data with a
-mixture of zeros and continuous values, modeled via a compound Poisson
-distribution with a Normal component.
+In many applied settings—including insurance claims, biological systems, and environmental monitoring—the observed data arise from a random number of additive events, where each event contributes a continuous value. A natural model for such data is the **Compound Poisson-Normal (CPN)** distribution.
+
+The CPN model assumes that the number of events follows a Poisson distribution, and that each event contributes an independent and identically distributed (i.i.d.) **normally distributed** amount.
+
+Formally, let:
+
+- \( N \sim \text{Poisson}(\lambda) \) denote the number of events,
+- \( X_1, X_2, \ldots, X_N \overset{\text{i.i.d.}}{\sim} \mathcal{N}(\mu, \sigma^2) \), independent of \( N \),
+
+Then the total observed outcome is modeled as a **compound sum**:
+
+\[
+Y = \sum_{i=1}^{N} X_i
+\]
+
+The resulting distribution of \( Y \) is known as the **Compound Poisson-Normal distribution**.
+
+
+The first two moments of the CPN distribution are:
+
+\[
+\mathbb{E}[Y] = \lambda \mu,\quad \text{Var}(Y) = \lambda (\mu^2 + \sigma^2)
+\]
+
+These follow from the properties of the compound distribution, combining Poisson and Gaussian contributions.
+The (approximate) probability density function (pdf) of \( Y \) is:
+
+\[
+f_Y(y; \lambda, \mu, \sigma) =
+\begin{cases}
+e^{-\lambda}, & \text{if } y = 0 \\\\
+\sum_{k=1}^{K_{\text{max}}} \frac{e^{-\lambda} \lambda^k}{k!} \cdot \frac{1}{\sqrt{2\pi k \sigma^2}} \exp\left( -\frac{(y - k\mu)^2}{2k\sigma^2} \right), & \text{if } y \neq 0
+\end{cases}
+\]
+
+**Where:**
+
+- \( y \): the observed total from the compound process  
+- \( \lambda \): expected number of Poisson events  
+- \( \mu \): mean of each normal component  
+- \( \sigma \): standard deviation of each normal component  
+- \( k \): number of events (from 1 to \( K_{\text{max}} \))  
+- \( K_{\text{max}} \): maximum number of events used in the approximation  
+
+When \( k = 0 \), the sum is defined as a point mass at zero, and its probability is:
+
+\[
+P(Y = 0) = P(N = 0) = e^{-\lambda}
+\]
+
+In theory, the compound distribution sums over an infinite range of possible Poisson event counts. In practice, this sum must be **truncated** at a finite maximum value \( N_{\max} \), chosen so that the remaining tail probability is negligible.
+
 
 # Package Setup
 
@@ -146,7 +197,7 @@ predict(fit, newdata = new_df, type = "response", interval = "confidence")
 
 # Conclusion
 
-The `cpnreg` package enables effective modeling of semicontinuous data using the
+The `CPN` package enables effective modeling of semicontinuous data using the
 Compound Poisson-Normal model. It supports flexible model specification, S3
 methods for diagnostics and inference, and prediction on new data. For more
 advanced use, refer to the function documentation or the package reference
