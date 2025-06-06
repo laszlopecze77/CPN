@@ -1,20 +1,19 @@
 #' Compound Poisson-Normal Regression
 #'
 #' Fits a Compound Poisson-Normal (CPN) regression model to the response
-#' variable using maximum likelihood estimation via the Nelder-Mead method.
+#' variable using maximum likelihood estimation via the Nelder-Mead method
+#' \insertCite{Nelder1965}{CPN}.
 #'
-#' @param formula A formula specifying the model, e.g., \code{y ~ x1 + x2}.
+#' @param formula A formula specifying the model, e.g., `y ~ x1 + x2`.
 #' @param data An optional data frame, list, or environment containing the
-#' variables in the model. If not found in \code{data}, the variables are
-#' taken from the environment from which \code{cpn} is called.
+#'   variables in the model. If not found in `data`, the variables are
+#'   taken from the environment from which `cpn` is called.
 #' @param mu_init Optional initial value for the Normal mean parameter.
-#' If \code{NULL}, it is set to the sample mean of \code{y}.
+#'   If `NULL`, it is set to the sample mean of `y`.
 #' @param sigma_init Optional initial value for the Normal standard deviation.
-#' If \code{NULL}, it is set to the sample standard deviation of \code{y}.
-#' @param epsilon A small positive value used for numerical tolerance in
-#' convergence checks. Default is \code{1e-6}.
+#'   If `NULL`, it is set to the sample standard deviation of `y`.
 #' @param k_max Upper limit of summation used in approximating the Poisson
-#' convolution. Should be between 10 and 100. Default is 10.
+#'   convolution. Should be between 10 and 100. Default is 10.
 #'
 #' @details
 #' The function fits a regression model where the response is assumed to follow
@@ -25,9 +24,9 @@
 #' The optimization is performed via maximum likelihood using the Nelder-Mead
 #' method. Standard errors are computed via the observed information matrix
 #' using numerical Hessian. If the Hessian is singular or not positive
-#' definite, a warning is issued and standard errors are returned as \code{NA}.
+#' definite, a warning is issued and standard errors are returned as `NA`.
 #'
-#' @return An object of class \code{"cpn"} containing the following components:
+#' @return An object of class `"cpn"` containing the following components:
 #' \item{coefficients}{Estimated regression coefficients.}
 #' \item{mu}{Estimated mean of the Normal component.}
 #' \item{sigma}{Estimated standard deviation of the Normal component.}
@@ -44,38 +43,43 @@
 #' \item{df_null}{Degrees of freedom for the null model.}
 #' \item{df_residual}{Degrees of freedom for the fitted model.}
 #' \item{aic}{Akaike Information Criterion.}
-#' \item{k_max}{Value used to truncate the Poisson convolution sum.}
 #' \item{call}{The matched function call.}
 #'
-#' @examples
-#' \dontrun{
-#'   set.seed(123)
-#'   n <- 100
-#'   x <- rnorm(n)
-#'   lambda <- exp(0.5 + 0.2 * x)
-#'   N <- rpois(n, lambda)
-#'   y <- ifelse(N == 0, 0, rnorm(n, mean = N * 3, sd = sqrt(N) * 2))
-#'   data <- data.frame(y = y, x = x)
-#'   fit <- cpn(y ~ x, data = data)
-#'   summary(fit)
-#' }
+#' @references
+#' \insertRef{Nelder1965}{CPN}
 #'
+#' @examples
+#' set.seed(123)
+#' n <- 100
+#' x <- rnorm(n)
+#' lambda <- exp(0.5 + 0.2 * x)
+#' N <- rpois(n, lambda) # nolint
+#' y <- ifelse(N == 0, 0, rnorm(n, mean = N * 3, sd = sqrt(N) * 2))
+#' data <- data.frame(y = y, x = x)
+#' fit <- cpn(y ~ x, data = data)
+#' summary(fit)
+#'
+#' @importFrom Rdpack reprompt
 #' @importFrom stats as.formula model.frame model.matrix model.response
 #' @importFrom stats optim setNames sd dnorm dpois terms
 #' @export
-
+#'
 cpn <- function(formula,
                 data = NULL,
                 mu_init = NULL,
                 sigma_init = NULL,
-                epsilon = 1e-6,
                 k_max = 10) {
 
-  # Ensure required package
-  if (!requireNamespace("numDeriv", quietly = TRUE)) {
-    stop("Package 'numDeriv' is required but not installed.")
+  null_or_numeric_1l <- function(x) {
+    is.null(x) | (is.numeric(x) & length(x) == 1L)
   }
-
+  stopifnot(
+    inherits(formula, "formula"),
+    null_or_numeric_1l(mu_init),
+    null_or_numeric_1l(sigma_init),
+    is.null(sigma_init) | sigma_init >= 0,
+    null_or_numeric_1l(k_max)
+  )
   if (k_max < 10 || k_max > 100) stop("k_max should be between 10 and 100")
 
   # Build model frame and design matrix
@@ -83,7 +87,7 @@ cpn <- function(formula,
   formula <- stats::as.formula(formula, env = parent.frame())
   mf <- stats::model.frame(formula = formula, data = data)
   y <- stats::model.response(mf)
-  X <- stats::model.matrix(attr(mf, "terms"), data = mf)
+  X <- stats::model.matrix(attr(mf, "terms"), data = mf) # nolint
 
   # Initial values
   if (is.null(mu_init)) mu_init <- mean(y)
@@ -106,7 +110,7 @@ cpn <- function(formula,
   loglik <- -fit$value
 
   # Compute Hessian and standard errors
-  H <- tryCatch({
+  H <- tryCatch({ # nolint
     numDeriv::hessian(
       func = function(par) {
         cpn_regression_neg_log_likelihood(
@@ -117,7 +121,7 @@ cpn <- function(formula,
     )
   }, error = function(e) {
     warning("Failed to compute Hessian: ", e$message)
-    return(matrix(NA, length(beta_hat), length(beta_hat)))
+    matrix(NA, length(beta_hat), length(beta_hat))
   })
 
   if (any(is.na(H)) || det(H) == 0 || any(!is.finite(H))) {
@@ -134,14 +138,13 @@ cpn <- function(formula,
     }
   }
 
-
   param_names <- c(colnames(X), "mu", "sigma")
   names(beta_hat) <- param_names
   names(se_hat) <- param_names
 
   # Compute fitted values (linear predictor)
   eta <- as.vector(X %*% beta_hat[seq_len(ncol(X))])
-  lambda_hat <- exp(eta)  # Poisson mean
+  lambda_hat <- exp(eta) # Poisson mean
   mu_hat <- beta_hat["mu"]
   sigma_hat <- beta_hat["sigma"]
 
@@ -152,34 +155,30 @@ cpn <- function(formula,
                          sigma_hat,
                          k_max = k_max) {
     if (y_i == 0) {
-      return(log(dpois(0, lambda_i)))
+      log(dpois(0, lambda_i))
     } else {
       k_vals <- 1:k_max
       pois_weights <- dpois(k_vals, lambda_i)
-      norm_vals <- dnorm(y_i,
-                         mean = k_vals * mu_hat,
-                         sd = sqrt(k_vals) * sigma_hat)
-      return(log(sum(pois_weights * norm_vals)))
+      norm_vals <- dnorm(
+        y_i,
+        mean = k_vals * mu_hat,
+        sd = sqrt(k_vals) * sigma_hat
+      )
+      log(sum(pois_weights * norm_vals))
     }
-  }
-
-  loglik_saturated <- function(y_i) {
-    # In saturated model, y_i is predicted perfectly → log-lik is 0 if Normal
-    # For residuals, we assume perfect fit implies maximum likelihood → return 0
-    return(0)
   }
 
   dev_res <- numeric(length(y))
   for (i in seq_along(y)) {
     ll_hat <- loglik_obs(y[i], lambda_hat[i], mu_hat, sigma_hat, k_max)
-    ll_sat <- loglik_saturated(y[i])
+    ll_sat <- 0
     diff <- y[i] - lambda_hat[i] * mu_hat
     dev_res[i] <- sign(diff) * sqrt(2 * (ll_sat - ll_hat))
   }
 
   # Null model (intercept only)
-  X_null <- matrix(1, nrow = nrow(X), ncol = 1)
-  colnames(X_null) <- "(Intercept)"
+  X_null <- matrix(1, nrow = nrow(X), ncol = 1) # nolint
+  colnames(X_null) <- "(Intercept)" # nolint
   null_fit <- stats::optim(
     par = c(0, mu_init, sigma_init),
     fn = cpn_regression_neg_log_likelihood,
@@ -196,32 +195,29 @@ cpn <- function(formula,
   df_null <- length(y) - 1
   df_residual <- length(y) - length(beta_hat)
 
-  # AIC: -2 * log-likelihood + 2 * number of parameters
-  k <- length(beta_hat)
-  aic_val <- 2 * k + 2 * fit$value  # equivalent to -2 * loglik + 2k
-
   model_frame <- stats::model.frame(formula, data)
   terms_obj <- stats::terms(model_frame)
 
-  # Add to returned list
-  structure(list(
-    coefficients = stats::setNames(beta_hat[seq_len(ncol(X))], colnames(X)),
-    mu = beta_hat["mu"],
-    sigma = beta_hat["sigma"],
-    se = se_hat,
-    model = model_frame,
-    terms = terms_obj,
-    formula = formula,
-    data = data,
-    deviance_residuals = dev_res,
-    fitted_values = lambda_hat * mu_hat,
-    neg_log_likelihood = fit$value,
-    null_deviance = null_deviance,
-    residual_deviance = residual_deviance,
-    df_null = df_null,
-    df_residual = df_residual,
-    aic = aic_val,
-    k_max = k_max,
-    call = match.call()
-  ), class = "cpn")
+  structure(
+    list(
+      coefficients = stats::setNames(beta_hat[seq_len(ncol(X))], colnames(X)),
+      mu = beta_hat["mu"],
+      sigma = beta_hat["sigma"],
+      se = se_hat,
+      model = model_frame,
+      terms = terms_obj,
+      formula = formula,
+      data = data,
+      deviance_residuals = dev_res,
+      fitted_values = lambda_hat * mu_hat,
+      neg_log_likelihood = fit$value,
+      null_deviance = null_deviance,
+      residual_deviance = residual_deviance,
+      df_null = df_null,
+      df_residual = df_residual,
+      k_max = k_max,
+      call = match.call()
+    ),
+    class = "cpn"
+  )
 }

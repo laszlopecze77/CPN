@@ -58,7 +58,7 @@ summary.cpn <- function(object, ...) {
     residual_deviance = object$residual_deviance,
     df_null = object$df_null,
     df_residual = object$df_residual,
-    aic = object$aic
+    aic = AIC(object)
   )
   class(out) <- "summary.cpn"
   return(out)

@@ -10,10 +10,9 @@
 #' @param ... Additional arguments passed to other methods (currently ignored).
 #'
 #' @return The input object \code{x}, invisibly.
+#' @importFrom stats AIC
 #' @export
 #'
-
-
 
 print.cpn <- function(x, ...) {
   cat("Call:\n")
@@ -27,7 +26,7 @@ print.cpn <- function(x, ...) {
 
   cat(sprintf("\nResidual deviance: %.2f on %d degrees of freedom\n",
               x$residual_deviance, x$df_residual))
-  cat(sprintf("AIC: %.2f\n", x$aic))
+  cat(sprintf("AIC: %.2f\n", AIC(x)))
 
   invisible(x)
 }
