@@ -25,6 +25,7 @@ Imports:
     emmeans,
     graphics,
     numDeriv,
+    Rdpack,
     stats
 Suggests: 
     testthat (>= 3.0.0),
@@ -33,3 +34,4 @@ Suggests:
     rmarkdown
 VignetteBuilder: knitr
 RoxygenNote: 7.3.2
+RdMacros: Rdpack

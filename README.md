@@ -14,6 +14,7 @@ Development dependencies:
 - For windows machines, rtools45
   (<https://cran.rstudio.com/bin/windows/Rtools/rtools45/rtools.html>)
 - package`roxygen2` version 7.3.2 for the documentation.
+- package `Rdpack` for the citation within function documentation.
 - package `devtools` to ease the development.
 - package `rmarkdown` for the vignettes.
 - package `sessioninfo` version 1.2.2 if running under windows.
