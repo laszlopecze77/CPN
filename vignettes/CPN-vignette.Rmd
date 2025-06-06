@@ -25,7 +25,7 @@ knitr::opts_chunk$set(
 
 
 
-# Introduction
+## Introduction
 
 In many applied settings—including insurance claims, biological systems, and environmental monitoring—the observed data arise from a random number of additive events, where each event contributes a continuous value. A natural model for such data is the **Compound Poisson-Normal (CPN)** distribution.
 
@@ -77,10 +77,22 @@ When \( k = 0 \), the sum is defined as a point mass at zero, and its probabilit
 P(Y = 0) = P(N = 0) = e^{-\lambda}
 \]
 
-In theory, the compound distribution sums over an infinite range of possible Poisson event counts. In practice, this sum must be **truncated** at a finite maximum value \( N_{\max} \), chosen so that the remaining tail probability is negligible.
+In theory, the compound distribution sums over an infinite range of possible Poisson event counts. In practice, this sum must be **truncated** at a finite maximum value \( K_{\max} \), chosen so that the remaining tail probability is negligible.
 
 
-# Package Setup
+## Installation
+
+you can install the current development version from GitHub with:
+
+```{r install, include=FALSE}
+if (!require("remotes")) {
+  install.packages("remotes")
+}
+remotes::install_github("laszlopecze77/CPN")
+```
+
+
+## Getting Started
 
 To use the function, load the package:
 
@@ -88,15 +100,17 @@ To use the function, load the package:
 library(CPN)
 ```
 
-# Simulating Data
+## Simulating Data
+
+We’ll simulate a dataset that mimics typical CPN behavior. This includes both categorical and continuous predictors, and outcomes generated via a Poisson count of normally distributed values.
 
 ```{r simu, message=FALSE, warning=FALSE}
 set.seed(123)
 
 simulate_cpn_data <- function(n = 200,
                               beta = c(0.5, -0.3, 0.7),
-                              mu = 2,
-                              sigma = 1) {
+                              mu = 1,
+                              sigma = 2) {
   x1 <- factor(sample(c("A", "B"), size = n, replace = TRUE))  # Categorical
   x2 <- rnorm(n)  # Continuous
   X <- model.matrix(~ x1 + x2) # nolint
@@ -116,34 +130,37 @@ data <- simulate_cpn_data()
 head(data)
 ```
 
-# Plot the simulated data
 
+## Plot the simulated data
+
+Visualize the response y against predictor x2, colored by group x1.
 ```{r simuplot, message=FALSE, warning=FALSE}
-# Scatter plot of y vs x2, colored by x1
-colors <- c("A" = "blue", "B" = "red")
-plot(
-  data$x2, data$y,
-  col = colors[data$x1],
-  pch = 19, xlab = "x2", ylab = "y",
-  main = "Scatter Plot of y vs x2 \n (colored by x1)"
+# Scatter plot of y vs x1
+stripchart(
+  y ~ x1, data = data,
+  vertical = TRUE, method = "jitter",
+  pch = 19, cex = 0.6,
+  col = c( "blue",  "red"),
+  xlab = "x1", ylab = "y",
+  main = "Scatter Plot of y by x1"
 )
-legend("topright", legend = levels(data$x1), col = colors, pch = 19)
+
 ```
 
-# Fit the CPN Model
-
+##  Fit the CPN Model
+Fit a Compound Poisson-Normal regression model to the data using a standard formula interface. The response variable y is modeled as a function of predictors x1 (categorical) and x2 (continuous).
 ```{r}
 fit <- cpn(y ~ x1 + x2, data = data)
 ```
 
-# Summary of Results
-
+##  Summary of Results
+Get a summary of the fitted model, including coefficient estimates, standard errors, z-values, and p-values. The summary also includes estimates of the mu and sigma parameters (mean and SD of the normal component) and model fit statistics like AIC.
 ```{r}
 summary(fit)
 ```
 
-# Extracting Model Components
-
+##  Extracting Model Components
+You can directly access key components of the fitted model object:
 ```{r}
 fit$coefficients
 fit$mu
@@ -151,21 +168,23 @@ fit$sigma
 fit$fitted_values[1:10]  # preview only
 ```
 
-# Coefficients and Interpretation
+##  Coefficients and Interpretation
+Use coef() to extract model coefficients. Setting full = FALSE shows only the linear predictor coefficients (excluding auxiliary parameters like mu and sigma).
 
 ```{r coef}
 coef(fit)
 coef(fit, full = FALSE)  # Includes only linear predictors
 ```
 
-# Diagnostics and Residuals
-
+##  Diagnostics and Residuals
+Basic diagnostic plots and residuals help check model fit and detect issues like non-linearity or outliers.
 ```{r diagnostics}
 plot(fit)
 residuals(fit)[1:10]
 ```
 
-# Likelihood and Information Criteria
+##  Likelihood and Information Criteria
+These metrics are useful for comparing model fit. `logLik()` gives the log-likelihood, `AIC()` the Akaike Information Criterion (lower is better), and `vcov()` returns the variance-covariance matrix of the parameters.
 
 ```{r fitstats}
 logLik(fit)
@@ -173,18 +192,26 @@ AIC(fit)
 vcov(fit)
 ```
 
-# Model Update and Comparison
+## Type I Analysis of Deviance
 
+The function `anova(fit)` provides a sequential (Type I) analysis of deviance.  
+This examines the incremental contribution of each predictor to the model's fit, based on the order in which they appear in the formula.
+
+```{r anova}
+anova(fit)
+```
+
+## Model Update and Comparison
+You can update a model (e.g., remove predictors) and compare nested models using the likelihood ratio test:
 ```{r update-anova}
 fit2 <- update(fit, . ~ . - x2)
 
 anova(fit, fit2)  # Likelihood ratio test
-anova(fit)        # Model summary
 ```
 
 
-# Prediction
-
+## Prediction
+Predict fitted values using the model. You can compute point predictions or confidence intervals. Use newdata to make predictions on new observations.
 ```{r predict}
 # Original data
 predict(fit, type = "response")[1:5]
@@ -195,7 +222,7 @@ new_df <- data.frame(x1 = c("A", "A", "B", "B"), x2 = c(-0.5, -0.2, -0.3, -0.3))
 predict(fit, newdata = new_df, type = "response", interval = "confidence")        
 ```
 
-# Conclusion
+## Conclusion
 
 The `CPN` package enables effective modeling of semicontinuous data using the
 Compound Poisson-Normal model. It supports flexible model specification, S3
@@ -203,4 +230,4 @@ methods for diagnostics and inference, and prediction on new data. For more
 advanced use, refer to the function documentation or the package reference
 manual.
 
-# References
+##  References
