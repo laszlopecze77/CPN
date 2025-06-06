@@ -9,7 +9,7 @@
 \arguments{
 \item{x}{An object of class \code{"summary.cpn"}, as returned by \code{\link[=summary.cpn]{summary.cpn()}}.}
 
-\item{...}{Additional arguments passed to \code{print}, ignored by default.}
+\item{...}{Additional arguments passed to \code{print} are ignored.}
 }
 \value{
 Invisibly returns the \code{summary.cpn} object.

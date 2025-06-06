@@ -2,8 +2,11 @@
 
 ## Installation
 
+Install the current development version from GitHub with:
+
 ```r
-devtools::install_github("laszlopecze77/CPN", dependencies = TRUE)
+if (!require("remotes")) install.packages("remotes")
+remotes::install_github("laszlopecze77/CPN")
 ```
 
 ## Development

@@ -1,19 +1,17 @@
 #' Analysis of Deviance for CPN Models
 #'
 #' Computes an analysis of deviance table for objects of class `cpn`, either:
-#' (1) sequentially by model terms (Type I ANOVA) when one model is supplied, or
-#' (2) by comparing two or more nested models.
+#' 1. sequentially by model terms (Type I ANOVA) when one model is supplied, or
+#' 2. by comparing two or more nested models.
 #'
 #' @param object An object of class `cpn`, typically the result of a call
-#' to [cpn()].
+#'   to [cpn()].
 #' @param ... Optional additional objects of class `cpn` for model comparison.
-#' @param test A character string specifying the test statistic. Currently only
-#' `"Chisq"` is supported.
 #'
 #' @return An object of class `"anova"` inheriting from `"data.frame"`,
 #' containing:
-#'   - If one model is provided: sequential deviance table by added terms.
-#'   - If multiple models are provided: deviance comparison between models.
+#' - If one model is provided: sequential deviance table by added terms.
+#' - If multiple models are provided: deviance comparison between models.
 #'
 #' @details
 #' When a single model is supplied, this function refits the model with terms
@@ -24,49 +22,83 @@
 #' then compares their deviances using chi-squared tests.
 #'
 #' @examples
-#' \dontrun{
+#' # Simulated data
+#' set.seed(123)
+#' n <- 100
+#' x1 <- rnorm(n)
+#' x2 <- factor(sample(c("A", "B"), size = n, replace = TRUE))
+#'
+#' lambda <- exp(0.5 + 0.2 * x1)
+#' N <- rpois(n, lambda) # nolint
+#' y <- ifelse(N == 0, 0, rnorm(n, mean = N * 3, sd = sqrt(N) * 2))
+#'
+#' data <- data.frame(y = y, x1 = x1, x2 = x2)
+#'
 #' # Sequential analysis of deviance
-#' fit <- cpn(y ~ x1 + x2, data = dat)
+#' fit <- cpn(y ~ x1 + x2, data = data)
 #' anova(fit)
 #'
 #' # Model comparison
-#' fit1 <- cpn(y ~ x1, data = dat)
-#' fit2 <- cpn(y ~ x1 + x2, data = dat)
+#' fit1 <- cpn(y ~ x1, data = data)
+#' fit2 <- cpn(y ~ x1 + x2, data = data)
 #' anova(fit1, fit2)
-#' }
 #'
 #' @export
-anova.cpn <- function(object, ..., test = "Chisq") {
-  more_models <- list(...)
+anova.cpn <- function(object, ...) {
+  if (length(list(...)) > 0) {
+    # Model comparison
+    h_anova_comp(object, ...)
+  } else {
+    # Sequential analysis of deviance
+    h_anova_seq(object)
+  }
+}
 
-  # If additional models are provided: compare multiple CPN fits
-  if (length(more_models) > 0) {
-    models <- c(list(object), more_models)
+#' Helper function: Analysis of Deviance for Comparison of CPN Models
+#'
+#' Computes an analysis of deviance table for objects of class `cpn`,
+#' by comparing two or more nested models.
+#'
+#' @param ... `cpn` models to compare.
+#'
+#' @return An object of class `"anova"` inheriting from `"data.frame"`,
+#'   containing sequential deviance table by added terms.
+#'
+#' @details
+#' The multiple supplied models are assumed to be nested and ordered
+#' by increasing complexity (based on residual degrees of freedom). The function
+#' then compares their deviances using chi-squared tests.
+#'
+#' @noRd
+h_anova_comp <- function(...) {
+  models <- list(...)
 
-    # Check all inputs are of class "cpn"
-    if (!all(sapply(models, inherits, "cpn"))) {
-      stop("All inputs must be of class 'cpn'")
-    }
+  # Check all inputs are of class "cpn"
+  if (!all(sapply(models, inherits, "cpn"))) {
+    stop("All inputs must be of class 'cpn'")
+  }
 
-    # Extract and order by residual df (increasing model complexity)
-    df_res <- sapply(models, function(m) m$df_residual)
-    dev <- sapply(models, function(m) m$residual_deviance)
-    n_models <- length(models)
+  # Extract and order by residual df (increasing model complexity)
+  df_res <- sapply(models, function(m) m$df_residual)
+  dev <- sapply(models, function(m) m$residual_deviance)
+  n_models <- length(models)
 
-    ord <- order(df_res)
-    models <- models[ord]
-    df_res <- df_res[ord]
-    dev <- dev[ord]
+  ord <- order(df_res)
+  models <- models[ord]
+  df_res <- df_res[ord]
+  dev <- dev[ord]
 
-    # Compute differences and p-values
-    df_diff <- c(NA, diff(df_res))
-    dev_diff <- c(NA, diff(dev))
-    p_vals <- c(NA, stats::pchisq(dev_diff[-1],
-                                  df_diff[-1],
-                                  lower.tail = FALSE))
+  # Compute differences and p-values
+  df_diff <- c(NA, diff(df_res))
+  dev_diff <- c(NA, diff(dev))
+  p_vals <- c(
+    NA,
+    stats::pchisq(dev_diff[-1], df_diff[-1], lower.tail = FALSE)
+  )
 
-    # Build comparison table
-    result <- data.frame(
+  # Build comparison table
+  structure(
+    data.frame(
       Model = paste0("Model ", seq_len(n_models)),
       `Resid. Df` = df_res,
       `Resid. Dev` = dev,
@@ -74,76 +106,95 @@ anova.cpn <- function(object, ..., test = "Chisq") {
       Deviance = dev_diff,
       `Pr(>Chi)` = p_vals,
       check.names = FALSE
+    ),
+    class = c("anova.cpn", "data.frame")
+  )
+}
+
+#' Helper function: Sequential Analysis of Deviance for CPN Models
+#'
+#' Computes an analysis of deviance table for objects of class `cpn`,
+#' sequentially by model terms (Type I ANOVA) when one model is supplied, or
+#'
+#' @param x a `cpn` model.
+#'
+#' @return An object of class `"anova"` inheriting from `"data.frame"`,
+#'   containing deviance comparison between models.
+#'
+#' @details
+#' This function refits the model with terms added sequentially and reports the
+#' change in residual deviance.
+#'
+#' @noRd
+h_anova_seq <- function(x) {
+
+  terms_obj <- stats::terms(x)
+  term_labels <- attr(terms_obj, "term.labels")
+
+  if (length(term_labels) == 0) {
+    warning("Model contains only an intercept. No terms to test.")
+    return(invisible(NULL))
+  }
+
+  response <- as.character(attr(terms_obj, "variables"))[2]
+  data <- x$data
+
+  # Intercept-only model
+  null_formula <- stats::as.formula(paste(response, "~ 1"))
+  fit_prev <- cpn(null_formula, data = data)
+  dev_prev <- fit_prev$residual_deviance
+  df_prev <- fit_prev$df_residual
+
+  rows <- list()
+  rows[[1]] <- list(
+    Term = "Residuals",
+    Df = NA,
+    Deviance = NA,
+    `Resid. Df` = df_prev,
+    `Resid. Dev` = dev_prev,
+    `Pr(>Chi)` = NA
+  )
+
+  for (i in seq_along(term_labels)) {
+    term <- term_labels[i]
+    current_formula <- stats::as.formula(
+      paste(response, "~", paste(term_labels[1:i], collapse = " + "))
+    )
+    fit_curr <- cpn(current_formula, data = data)
+
+    dev_curr <- fit_curr$residual_deviance
+    df_curr <- fit_curr$df_residual
+
+    df_diff <- df_prev - df_curr
+    dev_diff <- dev_prev - dev_curr
+    p_val <- if (!is.na(df_diff) && df_diff > 0) {
+      stats::pchisq(dev_diff, df = df_diff, lower.tail = FALSE)
+    } else {
+      NA
+    }
+
+    rows[[i + 1]] <- list(
+      Term = term,
+      Df = df_diff,
+      Deviance = dev_diff,
+      `Resid. Df` = df_curr,
+      `Resid. Dev` = dev_curr,
+      `Pr(>Chi)` = p_val
     )
 
-    class(result) <- c("anova.cpn", "data.frame")
-    return(result)
-
-  } else {
-    # Single-model mode: sequential deviance table by term
-    terms_obj <- stats::terms(object)
-    term_labels <- attr(terms_obj, "term.labels")
-
-
-    if (length(term_labels) == 0) {
-      warning("Model contains only an intercept. No terms to test.")
-      return(invisible(NULL))
-    }
-
-    response <- as.character(attr(terms_obj, "variables"))[2]
-    data <- object$data
-
-    # Intercept-only model
-    null_formula <- stats::as.formula(paste(response, "~ 1"))
-    fit_prev <- cpn(null_formula, data = data)
-    dev_prev <- fit_prev$residual_deviance
-    df_prev <- fit_prev$df_residual
-
-    rows <- list()
-    rows[[1]] <- list(Term = "Residuals", Df = NA, Deviance = NA,
-                      `Resid. Df` = df_prev, `Resid. Dev` = dev_prev,
-                      `Pr(>Chi)` = NA)
-
-    for (i in seq_along(term_labels)) {
-      term <- term_labels[i]
-      current_formula <- stats::as.formula(paste(response,
-                                                 "~",
-                                                 paste(term_labels[1:i],
-                                                       collapse = " + ")))
-      fit_curr <- cpn(current_formula, data = data)
-
-      dev_curr <- fit_curr$residual_deviance
-      df_curr <- fit_curr$df_residual
-
-      df_diff <- df_prev - df_curr
-      dev_diff <- dev_prev - dev_curr
-      p_val <- if (!is.na(df_diff) && df_diff > 0) {
-        stats::pchisq(dev_diff, df = df_diff, lower.tail = FALSE)
-      } else {
-        NA
-      }
-
-
-      rows[[i + 1]] <- list(Term = term, Df = df_diff, Deviance = dev_diff,
-                            `Resid. Df` = df_curr, `Resid. Dev` = dev_curr,
-                            `Pr(>Chi)` = p_val)
-
-      dev_prev <- dev_curr
-      df_prev <- df_curr
-    }
-
-    rows_list <- lapply(rows, function(row) {
-      as.data.frame(row, check.names = FALSE)
-    })
-
-    anova_df <- do.call(rbind, rows_list)
-
-    rownames(anova_df) <- NULL
-
-    class(anova_df) <- c("anova.cpn", "data.frame")
-
-    return(anova_df)
+    dev_prev <- dev_curr
+    df_prev <- df_curr
   }
+
+  rows_list <- lapply(rows, function(row) {
+    as.data.frame(row, check.names = FALSE)
+  })
+
+  structure(
+    do.call(rbind, rows_list),
+    rownames = NULL,
+    class = c("anova.cpn", "data.frame")
+  )
 }
 
 #' @export
@@ -167,10 +218,9 @@ print.anova.cpn <- function(x, digits = max(4, getOption("digits") - 2), ...) {
   out_print <- out
   out_print[] <- lapply(out_print, function(col) {
     if (is.numeric(col)) {
-      return(ifelse(is.na(col), "", formatC(col, digits = digits,
-                                            format = "g")))
+      ifelse(is.na(col), "", formatC(col, digits = digits, format = "g"))
     } else {
-      return(ifelse(is.na(col), "", as.character(col)))
+      ifelse(is.na(col), "", as.character(col))
     }
   })
 

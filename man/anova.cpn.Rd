@@ -4,16 +4,13 @@
 \alias{anova.cpn}
 \title{Analysis of Deviance for CPN Models}
 \usage{
-\method{anova}{cpn}(object, ..., test = "Chisq")
+\method{anova}{cpn}(object, ...)
 }
 \arguments{
 \item{object}{An object of class \code{cpn}, typically the result of a call
 to \code{\link[=cpn]{cpn()}}.}
 
 \item{...}{Optional additional objects of class \code{cpn} for model comparison.}
-
-\item{test}{A character string specifying the test statistic. Currently only
-\code{"Chisq"} is supported.}
 }
 \value{
 An object of class \code{"anova"} inheriting from \code{"data.frame"},
@@ -25,8 +22,10 @@ containing:
 }
 \description{
 Computes an analysis of deviance table for objects of class \code{cpn}, either:
-(1) sequentially by model terms (Type I ANOVA) when one model is supplied, or
-(2) by comparing two or more nested models.
+\enumerate{
+\item sequentially by model terms (Type I ANOVA) when one model is supplied, or
+\item by comparing two or more nested models.
+}
 }
 \details{
 When a single model is supplied, this function refits the model with terms
@@ -37,15 +36,25 @@ by increasing complexity (based on residual degrees of freedom). The function
 then compares their deviances using chi-squared tests.
 }
 \examples{
-\dontrun{
+# Simulated data
+set.seed(123)
+n <- 100
+x1 <- rnorm(n)
+x2 <- factor(sample(c("A", "B"), size = n, replace = TRUE))
+
+lambda <- exp(0.5 + 0.2 * x1)
+N <- rpois(n, lambda) # nolint
+y <- ifelse(N == 0, 0, rnorm(n, mean = N * 3, sd = sqrt(N) * 2))
+
+data <- data.frame(y = y, x1 = x1, x2 = x2)
+
 # Sequential analysis of deviance
-fit <- cpn(y ~ x1 + x2, data = dat)
+fit <- cpn(y ~ x1 + x2, data = data)
 anova(fit)
 
 # Model comparison
-fit1 <- cpn(y ~ x1, data = dat)
-fit2 <- cpn(y ~ x1 + x2, data = dat)
+fit1 <- cpn(y ~ x1, data = data)
+fit2 <- cpn(y ~ x1 + x2, data = data)
 anova(fit1, fit2)
-}
 
 }
