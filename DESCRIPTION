@@ -35,3 +35,4 @@ Suggests:
 VignetteBuilder: knitr
 RoxygenNote: 7.3.2
 RdMacros: Rdpack
+URL: https://laszlopecze77.github.io/CPN/
