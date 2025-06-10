@@ -1,10 +1,5 @@
 # Assumes cpn() is already defined in your environment
 
-# Load required packages
-if (!requireNamespace("testthat", quietly = TRUE)) install.packages("testthat")
-library(testthat)
-
-
 set.seed(123)
 n <- 100
 x <- rnorm(n)
@@ -35,11 +30,18 @@ fit <- cpn(y ~ x, data = test_data)
 
 # 1. Residual deviance equals sum of squared deviance residuals
 test_that("Residual deviance matches sum of squared deviance residuals", {
-  expect_equal(sum(fit$deviance_residuals^2), fit$residual_deviance, tolerance = 1e-6)
+  expect_equal(sum(fit$deviance_residuals^2),
+               fit$residual_deviance,
+               tolerance = 1e-6)
 })
 
 
 # 2. Signs of residuals are consistent with observed - fitted
-test_that("Signs of residuals are consistent with observed - fitted", {
-  expect_true(mean(sign(y - fit$fitted_values) == sign(fit$deviance_residuals)) > 0.98)
-})
+test_that(
+  "Signs of residuals are consistent with observed - fitted", {
+    res_signs <- sign(y - fit$fitted_values)
+    dev_signs <- sign(fit$deviance_residuals)
+    agreement <- mean(res_signs == dev_signs)
+    expect_true(agreement > 0.98)
+  }
+)
