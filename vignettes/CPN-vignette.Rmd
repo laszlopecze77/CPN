@@ -79,19 +79,6 @@ P(Y = 0) = P(N = 0) = e^{-\lambda}
 
 In theory, the compound distribution sums over an infinite range of possible Poisson event counts. In practice, this sum must be **truncated** at a finite maximum value \( K_{\max} \), chosen so that the remaining tail probability is negligible.
 
-
-## Installation
-
-you can install the current development version from GitHub with:
-
-```{r install, eval=F}
-if (!require("remotes")) {
-  install.packages("remotes")
-}
-remotes::install_github("laszlopecze77/CPN")
-```
-
-
 ## Getting Started
 
 To use the function, load the package:

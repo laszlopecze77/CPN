@@ -7,13 +7,12 @@
 \method{summary}{cpn}(object, ...)
 }
 \arguments{
-\item{object}{An object of class \code{"cpn"}, typically resulting from a call
-to a CPN regression function.}
+\item{object}{An object of class \code{"cpn"}, see \code{\link[=cpn]{cpn()}}.}
 
 \item{...}{Additional arguments (currently ignored).}
 }
 \value{
-An object of class \code{"summary.cpn"}, which is a list containing:
+An object of class \code{summary.cpn}, which is a list containing:
 \describe{
 \item{call}{The matched call that generated the model.}
 \item{summary_table}{A data frame with parameter estimates, standard
@@ -34,6 +33,18 @@ Produces a summary for a fitted \code{cpn} model object, including parameter
 estimates,
 standard errors, z-values, p-values, deviance residual summaries, and model
 diagnostics.
+}
+\examples{
+
+set.seed(123)
+n <- 100
+x <- rnorm(n)
+lambda <- exp(0.5 + 0.2 * x)
+N <- rpois(n, lambda) # nolint
+y <- ifelse(N == 0, 0, rnorm(n, mean = N * 3, sd = sqrt(N) * 2))
+fit <- cpn(y ~ x)
+summary(fit)
+
 }
 \seealso{
 \code{\link[=cpn]{cpn()}}, \code{\link[=anova.cpn]{anova.cpn()}}

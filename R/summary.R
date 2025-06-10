@@ -5,11 +5,10 @@
 #' standard errors, z-values, p-values, deviance residual summaries, and model
 #' diagnostics.
 #'
-#' @param object An object of class `"cpn"`, typically resulting from a call
-#' to a CPN regression function.
+#' @param object An object of class `"cpn"`, see [cpn()].
 #' @param ... Additional arguments (currently ignored).
 #'
-#' @return An object of class `"summary.cpn"`, which is a list containing:
+#' @return An object of class `summary.cpn`, which is a list containing:
 #' \describe{
 #'   \item{call}{The matched call that generated the model.}
 #'   \item{summary_table}{A data frame with parameter estimates, standard
@@ -28,6 +27,17 @@
 #' @seealso [cpn()], [anova.cpn()]
 #' @method summary cpn
 #' @export
+#' @examples
+#'
+#' set.seed(123)
+#' n <- 100
+#' x <- rnorm(n)
+#' lambda <- exp(0.5 + 0.2 * x)
+#' N <- rpois(n, lambda) # nolint
+#' y <- ifelse(N == 0, 0, rnorm(n, mean = N * 3, sd = sqrt(N) * 2))
+#' fit <- cpn(y ~ x)
+#' summary(fit)
+#'
 summary.cpn <- function(object, ...) {
   beta_hat <- object$coefficients
   se_hat <- object$se[seq_along(beta_hat)]
@@ -71,7 +81,7 @@ summary.cpn <- function(object, ...) {
 #' deviance residuals, and model fit statistics.
 #'
 #' @param x An object of class `"summary.cpn"`, as returned by [summary.cpn()].
-#' @param ... Additional arguments passed to `print`, ignored by default.
+#' @param ... Additional arguments passed to `print` are ignored.
 #'
 #' @return Invisibly returns the `summary.cpn` object.
 #' @method print summary.cpn
