@@ -61,7 +61,7 @@ summary.cpn <- function(object, ...) {
     aic = AIC(object)
   )
   class(out) <- "summary.cpn"
-  return(out)
+  out
 }
 
 #' Print Method for Summary of CPN Model

@@ -24,11 +24,11 @@
 #' X <- matrix(c(1, 2, 3, 4), ncol = 2)
 #' y <- c(0.5, 1.5)
 #' beta_mu_sigma <- c(0.1, 0.2, 1, 0.5)
-#' cpn_regression_neg_log_likelihood(beta_mu_sigma, X, y, k_max = 10)
+#' cpn_neg_log_likelihood(beta_mu_sigma, X, y, k_max = 10)
 #'
 #' @export
-cpn_regression_neg_log_likelihood <- function(beta_mu_sigma,
-                                              X,
+cpn_neg_log_likelihood <- function(beta_mu_sigma,
+                                              X,              # nolint
                                               y,
                                               k_max = 10) {
 
@@ -59,7 +59,7 @@ cpn_regression_neg_log_likelihood <- function(beta_mu_sigma,
       prob <- sum(poisson_probs * normal_probs)
     }
 
-    return(prob)
+    prob
 
   }, y, lambda_vec)
 
