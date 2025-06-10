@@ -29,7 +29,8 @@ A list with components used by \pkg{emmeans}:
 \item{\code{nbasis}}{Matrix for any non-estimable basis (empty here).}
 \item{\code{dffun}}{Function to return degrees of freedom.}
 \item{\code{dfargs}}{Arguments to \code{dffun}.}
-\item{\code{misc}}{Miscellaneous information including link function details.}
+\item{\code{misc}}{Miscellaneous information including link function
+details.}
 }
 }
 \description{

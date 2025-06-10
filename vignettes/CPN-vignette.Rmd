@@ -127,7 +127,7 @@ stripchart(
   y ~ x1, data = data,
   vertical = TRUE, method = "jitter",
   pch = 19, cex = 0.6,
-  col = c( "blue",  "red"),
+  col = c("blue",  "red"),
   xlab = "x1", ylab = "y",
   main = "Scatter Plot of y by x1"
 )
@@ -206,7 +206,10 @@ predict(fit, type = "response", interval = "confidence")[1:5, ]
 
 # New data
 new_df <- data.frame(x1 = c("A", "A", "B", "B"), x2 = c(-0.5, -0.2, -0.3, -0.3))
-predict(fit, newdata = new_df, type = "response", interval = "confidence")        
+predict(fit,
+        newdata = new_df,
+        type = "response",
+        interval = "confidence")
 ```
 
 ## Conclusion

@@ -98,7 +98,7 @@ cpn <- function(formula,
   # Optimize negative log-likelihood
   fit <- stats::optim(
     par = init_vals,
-    fn = cpn_regression_neg_log_likelihood,
+    fn = cpn_neg_log_likelihood,
     X = X,
     y = y,
     k_max = k_max,
@@ -110,10 +110,11 @@ cpn <- function(formula,
   loglik <- -fit$value
 
   # Compute Hessian and standard errors
+
   H <- tryCatch({ # nolint
     numDeriv::hessian(
       func = function(par) {
-        cpn_regression_neg_log_likelihood(
+        cpn_neg_log_likelihood(
           par, X, y, k_max = k_max
         )
       },
@@ -168,6 +169,7 @@ cpn <- function(formula,
     }
   }
 
+
   dev_res <- numeric(length(y))
   for (i in seq_along(y)) {
     ll_hat <- loglik_obs(y[i], lambda_hat[i], mu_hat, sigma_hat, k_max)
@@ -181,7 +183,7 @@ cpn <- function(formula,
   colnames(X_null) <- "(Intercept)" # nolint
   null_fit <- stats::optim(
     par = c(0, mu_init, sigma_init),
-    fn = cpn_regression_neg_log_likelihood,
+    fn = cpn_neg_log_likelihood,
     X = X_null,
     y = y,
     method = "Nelder-Mead",

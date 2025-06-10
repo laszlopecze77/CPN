@@ -4,13 +4,13 @@
 \alias{update.cpn}
 \title{Update a CPN Model with a New Formula or Data}
 \usage{
-\method{update}{cpn}(object, formula., data = NULL, ...)
+\method{update}{cpn}(object, new_formula, data = NULL, ...)
 }
 \arguments{
 \item{object}{An object of class \code{"cpn"}, typically produced by a CPN
 model fitting function.}
 
-\item{formula.}{A formula object specifying the new model formula.}
+\item{new_formula}{A formula object specifying the new model formula.}
 
 \item{data}{A data frame containing the new data. If \code{NULL},
 the original data from the object is used.}

@@ -55,7 +55,7 @@ predict.cpn <- function(object, newdata = NULL, type = c("response", "link"),
   terms_noy <- stats::delete.response(object$terms)
 
   if (is.null(newdata)) {
-    X <- stats::model.matrix(terms_noy, data = object$model,
+    X <- stats::model.matrix(terms_noy, data = object$model,     # nolint
                              contrasts.arg = attr(object$model, "contrasts"))
   } else {
     for (v in names(object$model)) {
@@ -66,7 +66,7 @@ predict.cpn <- function(object, newdata = NULL, type = c("response", "link"),
     mf <- stats::model.frame(terms_noy, data = newdata,
                              xlev = stats::.getXlevels(object$terms,
                                                        object$model))
-    X <- stats::model.matrix(terms_noy, data = mf,
+    X <- stats::model.matrix(terms_noy, data = mf,            # nolint
                              contrasts.arg = attr(object$model, "contrasts"))
   }
 
@@ -82,9 +82,9 @@ predict.cpn <- function(object, newdata = NULL, type = c("response", "link"),
   }
 
   # Confidence intervals
-  V_full <- stats::vcov(object)
+  V_full <- stats::vcov(object)     # nolint
   beta_names <- names(object$coefficients)  # only beta, not mu/sigma
-  V_beta <- V_full[beta_names, beta_names, drop = FALSE]
+  V_beta <- V_full[beta_names, beta_names, drop = FALSE] # nolint
   se_eta <- sqrt(rowSums((X %*% V_beta) * X))
 
   if (type == "link") {

@@ -16,5 +16,5 @@ logLik.cpn <- function(object, ...) {
   val <- -object$neg_log_likelihood
   attr(val, "df") <- length(object$se)
   class(val) <- "logLik"
-  return(val)
+  val
 }

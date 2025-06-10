@@ -1,3 +1,4 @@
+
 test_that("cpn checks mu_init", {
   set.seed(123)
   n <- 3
@@ -98,12 +99,14 @@ test_that("cpn estimates are close to true parameters", {
   true_mu <- 1
   true_sigma <- 2
   n <- 1000
+
   dat <- simulate_cpn_data(
     n = n,
     beta = true_beta,
     mu = true_mu,
     sigma = true_sigma
   )
+
 
   # Fit model
   fit <- cpn(y ~ x1 + x2, data = dat, k_max = 15)
@@ -117,13 +120,21 @@ test_that("cpn estimates are close to true parameters", {
   expect_named(beta_hat, c("(Intercept)", "x1B", "x2"))
 
   # Compare estimated vs true
-  expect_equal(
-    as.numeric(beta_hat["(Intercept)"]),
-    true_beta[1],
-    tolerance = 0.1
-  )
-  expect_equal(as.numeric(beta_hat["x1B"]), true_beta[2], tolerance = 0.1)
-  expect_equal(as.numeric(beta_hat["x2"]), true_beta[3], tolerance = 0.1)
-  expect_equal(as.numeric(mu_hat), true_mu, tolerance = 0.1)
-  expect_equal(as.numeric(sigma_hat), true_sigma, tolerance = 0.1)
+
+  expect_equal(as.numeric(beta_hat["(Intercept)"]),
+               true_beta[1],
+               tolerance = 0.1)
+  expect_equal(as.numeric(beta_hat["x1B"]),
+               true_beta[2],
+               tolerance = 0.1)
+  expect_equal(as.numeric(beta_hat["x2"]),
+               true_beta[3],
+               tolerance = 0.1)
+  expect_equal(as.numeric(mu_hat),
+               true_mu,
+               tolerance = 0.1)
+  expect_equal(as.numeric(sigma_hat),
+               true_sigma,
+               tolerance = 0.1)
+
 })
