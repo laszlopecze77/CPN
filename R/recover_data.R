@@ -13,6 +13,7 @@
 #'
 #' @importFrom emmeans recover_data
 #' @export
+#' @method recover_data cpn
 #'
 recover_data.cpn <- function(object, ...) {
   emmeans::recover_data(

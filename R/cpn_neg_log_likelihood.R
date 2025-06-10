@@ -28,9 +28,16 @@
 #'
 #' @export
 cpn_neg_log_likelihood <- function(beta_mu_sigma,
-                                              X,              # nolint
-                                              y,
-                                              k_max = 10) {
+                                   X, # nolint
+                                   y,
+                                   k_max = 10) {
+  stopifnot(
+    !is.na(beta_mu_sigma),
+    is.numeric(beta_mu_sigma),
+    is.numeric(X),
+    is.numeric(y),
+    is.numeric(k_max)
+  )
 
   # Extract parameters
   p <- ncol(X)
@@ -44,28 +51,27 @@ cpn_neg_log_likelihood <- function(beta_mu_sigma,
   eta <- X %*% beta
   lambda_vec <- as.vector(exp(eta))  # Observation-specific lambda
 
-
   # Compute likelihood for each observation
-  likelihoods <- mapply(function(x_i, lambda_i) {
-
+  compute_likelihood <- function(x_i, lambda_i) {
     if (x_i == 0) {
-      prob <- stats::dpois(0, lambda_i)
+      stats::dpois(0, lambda_i)
     } else {
-      k_vals <- 1:k_max
+      k_vals <- seq_len(k_max)
       poisson_probs <- stats::dpois(k_vals, lambda_i)
-      normal_probs <- stats::dnorm(x_i,
-                                   mean = k_vals * mu,
-                                   sd = sqrt(k_vals * sigma^2))
-      prob <- sum(poisson_probs * normal_probs)
+      normal_probs <- stats::dnorm(
+        x_i,
+        mean = k_vals * mu,
+        sd = sqrt(k_vals * sigma^2)
+      )
+      sum(poisson_probs * normal_probs)
     }
+  }
 
-    prob
-
-  }, y, lambda_vec)
+  likelihoods <- mapply(compute_likelihood, x_i = y, lambda_i = lambda_vec)
 
   # If any likelihood is 0 (log(0) = -Inf), return Inf for the negative
   # log-likelihood
   if (any(likelihoods <= 0)) return(Inf)
 
-  return(-sum(log(likelihoods)))
+  -sum(log(likelihoods))
 }
