@@ -1,7 +1,10 @@
 library(testthat)
 
 set.seed(123)
-simulate_cpn_data <- function(n = 100, beta = c(0.5, -0.3, 0.7), mu = 1, sigma = 2) {
+simulate_cpn_data <- function(n = 100,
+                              beta = c(0.5, -0.3, 0.7),
+                              mu = 1,
+                              sigma = 2) {
   set.seed(123)  # For reproducibility
 
   # Simulate predictors
@@ -9,7 +12,7 @@ simulate_cpn_data <- function(n = 100, beta = c(0.5, -0.3, 0.7), mu = 1, sigma =
   x2 <- rnorm(n)  # Continuous
 
   # Create model matrix (includes intercept and dummy variable for x1)
-  X <- model.matrix(~ x1 + x2)  # Will generate intercept, x1B, x2
+  X <- model.matrix(~ x1 + x2)  # Will generate intercept, x1B, x2 # nolint
 
   # Compute linear predictor and Poisson rates
   eta <- X %*% beta
@@ -41,7 +44,7 @@ test_that("vcov.cpn returns valid variance-covariance matrix", {
   fit <- cpn(y ~ x1 + x2, data = test_data)
 
   # Extract variance-covariance matrix
-  V <- vcov(fit)
+  V <- vcov(fit)                          # nolint
 
   # Check it's a matrix
   expect_true(is.matrix(V))

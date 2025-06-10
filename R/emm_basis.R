@@ -26,38 +26,44 @@
 #'   \item{\code{nbasis}}{Matrix for any non-estimable basis (empty here).}
 #'   \item{\code{dffun}}{Function to return degrees of freedom.}
 #'   \item{\code{dfargs}}{Arguments to \code{dffun}.}
-#'   \item{\code{misc}}{Miscellaneous information including link function details.}
+#'   \item{\code{misc}}{Miscellaneous information including link function
+#'   details.}
 #' }
 #' @importFrom stats vcov
 #' @export
-emm_basis.cpn <- function(object, trms, xlev, grid, ...) {
+emm_basis.cpn <- function(object, trms, xlev, grid, ...) {    # nolint
   # Construct model matrix from reference grid
-  X <- model.matrix(trms, grid)
+  X <- model.matrix(trms, grid)         # nolint
 
   # Extract regression coefficients only (exclude mu and sigma)
   bhat <- object$coefficients  # Named vector
 
   # Extract full vcov and reduce to regression part
-  V_full <- vcov(object)
-  V <- V_full[names(bhat), names(bhat), drop = FALSE]
+  V_full <- vcov(object)                # nolint
+  V <- V_full[names(bhat), names(bhat), drop = FALSE]   # nolint
 
   # Match X columns with coefficient names
   if (!all(names(bhat) %in% colnames(X))) {
     stop("Mismatch between model matrix columns and coefficient names")
   }
-  X <- X[, names(bhat), drop = FALSE]
+  X <- X[, names(bhat), drop = FALSE]    # nolint
 
   # No penalized/nuisance terms
   nbasis <- matrix(0, 0, length(bhat))
   colnames(nbasis) <- names(bhat)
 
   # Degrees of freedom
-  dfargs <- list(df = if (!is.null(object$df_residual)) object$df_residual else Inf)
+  dfargs <- list(
+    df = if (!is.null(object$df_residual))
+      object$df_residual
+    else
+      Inf
+  )
   dffun <- function(k, dfargs) dfargs$df
 
   # Specify transformation for emmeans on response scale
   linkinv <- exp  # Inverse of log link
-  varfun <- function(var) var^2  # Variance function on log scale (used by emmeans)
+  varfun <- function(var) var^2  # Variance function on log scale
 
   list(
     X = X,

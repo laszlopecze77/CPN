@@ -46,10 +46,10 @@ vcov.cpn <- function(object, ...) {
   full_params <- c(object$coefficients, object$mu, object$sigma)
 
   # Compute Hessian
-  H <- numDeriv::hessian(
-    cpn_regression_neg_log_likelihood,
+  H <- numDeriv::hessian(                  # nolint
+    cpn_neg_log_likelihood,
     x = full_params,
-    X = stats::model.matrix(object$formula, object$data),
+    X = stats::model.matrix(object$formula, object$data),   # nolint
     y = stats::model.response(stats::model.frame(object$formula, object$data)),
     k_max = object$k_max
   )
@@ -63,7 +63,7 @@ vcov.cpn <- function(object, ...) {
   }
 
   # Return named variance-covariance matrix
-  V <- solve(H)
-  dimnames(V) <- list(names(full_params), names(full_params))
-  return(V)
+  V <- solve(H)              # nolint
+  dimnames(V) <- list(names(full_params), names(full_params))  # nolint
+  V
 }

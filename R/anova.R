@@ -167,10 +167,10 @@ print.anova.cpn <- function(x, digits = max(4, getOption("digits") - 2), ...) {
   out_print <- out
   out_print[] <- lapply(out_print, function(col) {
     if (is.numeric(col)) {
-      return(ifelse(is.na(col), "", formatC(col, digits = digits,
-                                            format = "g")))
+      ifelse(is.na(col), "", formatC(col, digits = digits,
+                                     format = "g"))
     } else {
-      return(ifelse(is.na(col), "", as.character(col)))
+      ifelse(is.na(col), "", as.character(col))
     }
   })
 

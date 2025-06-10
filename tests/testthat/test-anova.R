@@ -1,7 +1,10 @@
 library(testthat)
 
 set.seed(123)
-simulate_cpn_data <- function(n = 100, beta = c(0.5, -0.3, 0.7), mu = 1, sigma = 2) {
+simulate_cpn_data <- function(n = 100,
+                              beta = c(0.5, -0.3, 0.7),
+                              mu = 1,
+                              sigma = 2) {
   set.seed(123)  # For reproducibility
 
   # Simulate predictors
@@ -9,7 +12,7 @@ simulate_cpn_data <- function(n = 100, beta = c(0.5, -0.3, 0.7), mu = 1, sigma =
   x2 <- rnorm(n)  # Continuous
 
   # Create model matrix (includes intercept and dummy variable for x1)
-  X <- model.matrix(~ x1 + x2)  # Will generate intercept, x1B, x2
+  X <- model.matrix(~ x1 + x2)  # Will generate intercept, x1B, x2  # nolint
 
   # Compute linear predictor and Poisson rates
   eta <- X %*% beta
@@ -68,34 +71,50 @@ test_that("anova.cpn returns NULL for intercept-only model", {
 })
 
 
-test_that("anova.cpn produces a valid sequential deviance table for a single model", {
+test_that(
+  "anova.cpn produces a valid sequential deviance table for a single model",
+  {
+    # Fit a full model with two predictors
+    full_model <- cpn(y ~ x1 + x2, data = test_data)
 
-  # Fit a full model with two predictors
-  full_model <- cpn(y ~ x1 + x2, data = test_data)
+    # Run ANOVA sequentially
+    aov_seq <- anova(full_model)
 
-  # Run ANOVA sequentially
-  aov_seq <- anova(full_model)
+    expect_s3_class(aov_seq, "anova.cpn")
 
-  expect_s3_class(aov_seq, "anova.cpn")
+    # There should be 1 row for residuals + 1 per term
+    expect_equal(nrow(aov_seq), 3)
+    expect_equal(aov_seq$Term[1], "Residuals")
+    expect_equal(sort(aov_seq$Term[-1]), sort(c("x1", "x2")))
 
-  # There should be 1 row for residuals + 1 per term
-  expect_equal(nrow(aov_seq), 3)
-  expect_equal(aov_seq$Term[1], "Residuals")
-  expect_equal(sort(aov_seq$Term[-1]), sort(c("x1", "x2")))
+    # Residual deviance should decrease
+    expect_true(
+      all(diff(aov_seq$`Resid. Dev`[-1]) < 0)
+    )
 
-  # Residual deviance should decrease
-  expect_true(all(diff(aov_seq$`Resid. Dev`[-1]) < 0))
+    # Residual degrees of freedom should decrease
+    expect_true(
+      all(diff(aov_seq$`Resid. Df`[-1]) < 0)
+    )
 
-  # Residual degrees of freedom should decrease
-  expect_true(all(diff(aov_seq$`Resid. Df`[-1]) < 0))
+    # Deviance differences should be non-negative
+    expect_true(
+      all(aov_seq$Deviance[-1] >= 0)
+    )
 
-  # Deviance differences should be non-negative
-  expect_true(all(aov_seq$Deviance[-1] >= 0))
+    # Check that p-values are within [0, 1] or NA
+    expect_true(
+      all(
+        is.na(aov_seq$`Pr(>Chi)`[-1]) |
+          (aov_seq$`Pr(>Chi)`[-1] >= 0 & aov_seq$`Pr(>Chi)`[-1] <= 1)
+      )
+    )
 
-  # Check that p-values are within [0, 1] or NA
-  expect_true(all(is.na(aov_seq$`Pr(>Chi)`[-1]) |
-                    (aov_seq$`Pr(>Chi)`[-1] >= 0 & aov_seq$`Pr(>Chi)`[-1] <= 1)))
-
-  # First row (Residuals) should have NA for test columns
-  expect_true(all(is.na(aov_seq[1, c("Df", "Deviance", "Pr(>Chi)")])))
-})
+    # First row (Residuals) should have NA for test columns
+    expect_true(
+      all(
+        is.na(aov_seq[1, c("Df", "Deviance", "Pr(>Chi)")])
+      )
+    )
+  }
+)

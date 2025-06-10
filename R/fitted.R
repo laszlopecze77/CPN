@@ -13,5 +13,5 @@
 
 
 fitted.cpn <- function(object, ...) {
-  return(object$fitted_values)
+  object$fitted_values
 }

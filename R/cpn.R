@@ -83,7 +83,7 @@ cpn <- function(formula,
   formula <- stats::as.formula(formula, env = parent.frame())
   mf <- stats::model.frame(formula = formula, data = data)
   y <- stats::model.response(mf)
-  X <- stats::model.matrix(attr(mf, "terms"), data = mf)
+  X <- stats::model.matrix(attr(mf, "terms"), data = mf) # nolint
 
   # Initial values
   if (is.null(mu_init)) mu_init <- mean(y)
@@ -94,7 +94,7 @@ cpn <- function(formula,
   # Optimize negative log-likelihood
   fit <- stats::optim(
     par = init_vals,
-    fn = cpn_regression_neg_log_likelihood,
+    fn = cpn_neg_log_likelihood,
     X = X,
     y = y,
     k_max = k_max,
@@ -106,10 +106,10 @@ cpn <- function(formula,
   loglik <- -fit$value
 
   # Compute Hessian and standard errors
-  H <- tryCatch({
+  H <- tryCatch({                     # nolint
     numDeriv::hessian(
       func = function(par) {
-        cpn_regression_neg_log_likelihood(
+        cpn_neg_log_likelihood(
           par, X, y, k_max = k_max
         )
       },
@@ -117,7 +117,7 @@ cpn <- function(formula,
     )
   }, error = function(e) {
     warning("Failed to compute Hessian: ", e$message)
-    return(matrix(NA, length(beta_hat), length(beta_hat)))
+    matrix(NA, length(beta_hat), length(beta_hat))
   })
 
   if (any(is.na(H)) || det(H) == 0 || any(!is.finite(H))) {
@@ -166,7 +166,7 @@ cpn <- function(formula,
   loglik_saturated <- function(y_i) {
     # In saturated model, y_i is predicted perfectly → log-lik is 0 if Normal
     # For residuals, we assume perfect fit implies maximum likelihood → return 0
-    return(0)
+    return(0) #nolint
   }
 
   dev_res <- numeric(length(y))
@@ -178,11 +178,11 @@ cpn <- function(formula,
   }
 
   # Null model (intercept only)
-  X_null <- matrix(1, nrow = nrow(X), ncol = 1)
-  colnames(X_null) <- "(Intercept)"
+  X_null <- matrix(1, nrow = nrow(X), ncol = 1) # nolint
+  colnames(X_null) <- "(Intercept)" # nolint
   null_fit <- stats::optim(
     par = c(0, mu_init, sigma_init),
-    fn = cpn_regression_neg_log_likelihood,
+    fn = cpn_neg_log_likelihood,
     X = X_null,
     y = y,
     method = "Nelder-Mead",
