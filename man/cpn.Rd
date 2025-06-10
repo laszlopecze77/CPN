@@ -4,14 +4,7 @@
 \alias{cpn}
 \title{Compound Poisson-Normal Regression}
 \usage{
-cpn(
-  formula,
-  data = NULL,
-  mu_init = NULL,
-  sigma_init = NULL,
-  epsilon = 1e-06,
-  k_max = 10
-)
+cpn(formula, data = NULL, mu_init = NULL, sigma_init = NULL, k_max = 10)
 }
 \arguments{
 \item{formula}{A formula specifying the model, e.g., \code{y ~ x1 + x2}.}
@@ -25,9 +18,6 @@ If \code{NULL}, it is set to the sample mean of \code{y}.}
 
 \item{sigma_init}{Optional initial value for the Normal standard deviation.
 If \code{NULL}, it is set to the sample standard deviation of \code{y}.}
-
-\item{epsilon}{A small positive value used for numerical tolerance in
-convergence checks. Default is \code{1e-6}.}
 
 \item{k_max}{Upper limit of summation used in approximating the Poisson
 convolution. Should be between 10 and 100. Default is 10.}
@@ -49,13 +39,13 @@ An object of class \code{"cpn"} containing the following components:
 \item{residual_deviance}{Residual deviance of the fitted model.}
 \item{df_null}{Degrees of freedom for the null model.}
 \item{df_residual}{Degrees of freedom for the fitted model.}
-\item{aic}{Akaike Information Criterion.}
 \item{k_max}{Value used to truncate the Poisson convolution sum.}
 \item{call}{The matched function call.}
 }
 \description{
 Fits a Compound Poisson-Normal (CPN) regression model to the response
-variable using maximum likelihood estimation via the Nelder-Mead method.
+variable using maximum likelihood estimation via the Nelder-Mead method
+\insertCite{Nelder1965}{CPN}.
 }
 \details{
 The function fits a regression model where the response is assumed to follow
@@ -69,16 +59,17 @@ using numerical Hessian. If the Hessian is singular or not positive
 definite, a warning is issued and standard errors are returned as \code{NA}.
 }
 \examples{
-\dontrun{
-  set.seed(123)
-  n <- 100
-  x <- rnorm(n)
-  lambda <- exp(0.5 + 0.2 * x)
-  N <- rpois(n, lambda)
-  y <- ifelse(N == 0, 0, rnorm(n, mean = N * 3, sd = sqrt(N) * 2))
-  data <- data.frame(y = y, x = x)
-  fit <- cpn(y ~ x, data = data)
-  summary(fit)
-}
+set.seed(123)
+n <- 100
+x <- rnorm(n)
+lambda <- exp(0.5 + 0.2 * x)
+N <- rpois(n, lambda) # nolint
+y <- ifelse(N == 0, 0, rnorm(n, mean = N * 3, sd = sqrt(N) * 2))
+data <- data.frame(y = y, x = x)
+fit <- cpn(y ~ x, data = data)
+summary(fit)
 
+}
+\references{
+\insertRef{Nelder1965}{CPN}
 }
