@@ -212,18 +212,63 @@ anova(fit, fit2)  # Likelihood ratio test
 
 
 ## Prediction
-Predict fitted values using the model. You can compute point predictions or confidence intervals. Use newdata to make predictions on new observations.
-```{r predict}
-# Original data
-predict(fit, type = "response")[1:5]
-predict(fit, type = "response", interval = "confidence")[1:5, ]
 
-# New data
-new_df <- data.frame(x1 = c("A", "A", "B", "B"), x2 = c(-0.5, -0.2, -0.3, -0.3))
-predict(fit,
-        newdata = new_df,
-        type = "response",
-        interval = "confidence")
+Once you have fitted a Compound Poisson-Normal (CPN) regression model using the `cpn()` function, you can generate predictions on both the **original data** and **new observations** using the `predict()` method for `cpn` objects.
+
+This method supports three prediction types:
+
+- **"link"**: Returns the linear predictor \(\eta = X\beta\).
+- **"rate"**: Returns the rate component \(\exp(\eta)\), representing the expected number of latent events.
+- **"response"**: Returns the expected response \(\mathbb{E}[Y] = \mu \cdot \exp(\eta)\), combining the frequency and magnitude components of the compound distribution.
+
+Additionally, confidence intervals can be requested using the `interval = "confidence"` argument, which computes approximate **normal-theory confidence intervals** using the **delta method**.
+
+### Predicting on the Original Data
+
+By default, `predict()` uses the original dataset used for model fitting. You can obtain point estimates or confidence intervals for the fitted values.
+
+```{r predict-original}
+# Point predictions on the response scale
+predict(fit, type = "response")[1:5]
+
+# Confidence intervals for response predictions
+predict(fit, type = "response", interval = "confidence")[1:5, ]
+```
+
+### Predicting on New Data
+
+To make predictions on new data, provide a `data.frame` to the `newdata` argument. The function will internally align factor levels and construct the appropriate model matrix.
+
+```{r predict-new}
+# Define new observations
+new_df <- data.frame(
+  x1 = c("A", "A", "B", "B"),
+  x2 = c(-0.5, -0.2, -0.3, -0.3)
+)
+
+# Predictions on the link scale (linear predictor η)
+predict(fit, newdata = new_df, type = "link", interval = "confidence")
+
+# Predictions on the rate scale (exp(η))
+predict(fit, newdata = new_df, type = "rate", interval = "confidence")
+
+# Predictions on the response scale (μ × exp(η))
+predict(fit, newdata = new_df, type = "response", interval = "confidence")
+```
+
+### Confidence Intervals
+
+When `interval = "confidence"` is used:
+
+- On the **link** and **rate** scales, confidence intervals are based solely on the uncertainty in the regression coefficients (\(\beta\)).
+- On the **response** scale, the intervals additionally incorporate uncertainty in the mean magnitude parameter (\(\mu\)) using the **delta method**:
+
+\[
+\text{SE}[\mu \cdot \exp(\eta)] \approx \sqrt{(\mu \cdot \exp(\eta))^2 \cdot \text{Var}[\eta] + (\exp(\eta))^2 \cdot \text{Var}[\mu]}
+\]
+
+This provides a more accurate reflection of total uncertainty when predicting expected values of the compound outcome.
+
 ```
 
 ## Conclusion

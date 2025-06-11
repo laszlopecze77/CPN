@@ -7,7 +7,7 @@
 \method{predict}{cpn}(
   object,
   newdata = NULL,
-  type = c("response", "link"),
+  type = c("link", "rate", "response"),
   interval = c("none", "confidence"),
   level = 0.95,
   ...
@@ -21,8 +21,9 @@ function fitting a Compound Poisson-Normal regression model.}
 with which to predict. If omitted, the original model data is used.}
 
 \item{type}{Type of prediction: \code{"link"} returns the linear
-predictor \eqn{\eta = X\beta}; \code{"response"} returns the mean
-response \eqn{E[Y] = \mu \cdot \exp(\eta)}.}
+predictor \eqn{\eta = X\beta}; \code{"rate"} returns \eqn{\exp(\eta)};
+\code{"response"} returns the mean response
+\eqn{E[Y] = \mu \cdot \exp(\eta)}.}
 
 \item{interval}{Type of interval calculation. Either \code{"none"} (default)
 or \code{"confidence"} for confidence intervals around the predicted values.}
@@ -34,8 +35,8 @@ used).}
 }
 \value{
 If \code{interval = "none"}, returns a numeric vector of predicted
-values on the specified scale.
-If \code{interval = "confidence"}, returns a data frame with columns:
+values on the specified scale. If \code{interval = "confidence"}, returns a
+data frame with columns:
 \describe{
 \item{\code{fit}}{Predicted value}
 \item{\code{lwr}}{Lower bound of the confidence interval}
@@ -44,9 +45,8 @@ If \code{interval = "confidence"}, returns a data frame with columns:
 }
 \description{
 Computes predictions from a fitted Compound Poisson-Normal (CPN) regression
-model.
-Supports predictions on the link or response scale, with optional confidence
-intervals.
+model. Supports predictions on the link, rate, or response scale, with
+optional confidence intervals.
 }
 \details{
 For predictions on the response scale with confidence intervals,
