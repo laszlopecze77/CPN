@@ -2,44 +2,41 @@
 % Please edit documentation in R/emm_basis.R
 \name{emm_basis.cpn}
 \alias{emm_basis.cpn}
-\title{Basis for Estimated Marginal Means for \code{cpn} Model}
+\title{Basis for Estimated Marginal Means for Compound Poisson-Normal Models}
 \usage{
 emm_basis.cpn(object, trms, xlev, grid, ...)
 }
 \arguments{
-\item{object}{A fitted model object of class \code{cpn}.}
+\item{object}{A fitted model object of class \code{"cpn"} returned by a call to
+e.g., \code{cpn5()}.}
 
-\item{trms}{Terms object, usually derived
-from \code{delete.response(terms(object))}.}
+\item{trms}{Terms object extracted from the model formula, typically
+provided by \pkg{emmeans}.}
 
-\item{xlev}{A list of levels for factors, typically from the data used in
-fitting.}
+\item{xlev}{A list of levels for factors in the reference grid.}
 
-\item{grid}{A reference grid (data frame) over which to
-ompute estimated means.}
+\item{grid}{A data frame representing the reference grid for which EMMs are
+to be computed.}
 
-\item{...}{Additional arguments (currently ignored).}
+\item{...}{Additional arguments (currently unused).}
 }
 \value{
-A list with components used by \pkg{emmeans}:
+A list with the components required by \pkg{emmeans}:
 \describe{
-\item{\code{X}}{Model matrix for the reference grid.}
-\item{\code{bhat}}{Estimated regression coefficients.}
-\item{\code{V}}{Covariance matrix for the fixed effects.}
-\item{\code{nbasis}}{Matrix for any non-estimable basis (empty here).}
-\item{\code{dffun}}{Function to return degrees of freedom.}
-\item{\code{dfargs}}{Arguments to \code{dffun}.}
-\item{\code{misc}}{Miscellaneous information including link function
-details.}
+\item{X}{Model matrix for the reference grid.}
+\item{bhat}{Estimated regression coefficients.}
+\item{V}{Variance-covariance matrix of the coefficients.}
+\item{nbasis}{A matrix indicating no penalized basis functions (empty in
+this case).}
+\item{dffun}{Function returning degrees of freedom for inference (fixed
+at \code{Inf}).}
+\item{dfargs}{Arguments for \code{dffun}.}
+\item{misc}{List of transformation and variance functions used in EMM
+computations.}
 }
 }
 \description{
-This function provides the required components for computing estimated
-marginal means
-from a fitted Compound Poisson-Normal (CPN) model using the \pkg{emmeans}
-package.
-It extracts the model matrix, fixed-effect estimates, and covariance matrix,
-and
-provides information about degrees of freedom and transformation on the
-response scale.
+Provides the required components for computing estimated marginal means
+(EMMs) from a fitted Compound Poisson-Normal (CPN) model. This method is
+used by the \pkg{emmeans} package to interface with models of class \code{"cpn"}.
 }

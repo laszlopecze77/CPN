@@ -1,70 +1,74 @@
-#' Basis for Estimated Marginal Means for `cpn` Model
+#' Basis for Estimated Marginal Means for Compound Poisson-Normal Models
 #'
-#' This function provides the required components for computing estimated
-#' marginal means
-#' from a fitted Compound Poisson-Normal (CPN) model using the \pkg{emmeans}
-#' package.
-#' It extracts the model matrix, fixed-effect estimates, and covariance matrix,
-#' and
-#' provides information about degrees of freedom and transformation on the
-#' response scale.
+#' Provides the required components for computing estimated marginal means
+#' (EMMs) from a fitted Compound Poisson-Normal (CPN) model. This method is
+#' used by the \pkg{emmeans} package to interface with models of class `"cpn"`.
 #'
-#' @param object A fitted model object of class \code{cpn}.
-#' @param trms Terms object, usually derived
-#' from \code{delete.response(terms(object))}.
-#' @param xlev A list of levels for factors, typically from the data used in
-#' fitting.
-#' @param grid A reference grid (data frame) over which to
-#' ompute estimated means.
-#' @param ... Additional arguments (currently ignored).
+#' @param object A fitted model object of class `"cpn"` returned by a call to
+#'   e.g., `cpn5()`.
+#' @param trms Terms object extracted from the model formula, typically
+#'   provided by \pkg{emmeans}.
+#' @param xlev A list of levels for factors in the reference grid.
+#' @param grid A data frame representing the reference grid for which EMMs are
+#'   to be computed.
+#' @param ... Additional arguments (currently unused).
 #'
-#' @return A list with components used by \pkg{emmeans}:
+#' @return A list with the components required by \pkg{emmeans}:
 #' \describe{
-#'   \item{\code{X}}{Model matrix for the reference grid.}
-#'   \item{\code{bhat}}{Estimated regression coefficients.}
-#'   \item{\code{V}}{Covariance matrix for the fixed effects.}
-#'   \item{\code{nbasis}}{Matrix for any non-estimable basis (empty here).}
-#'   \item{\code{dffun}}{Function to return degrees of freedom.}
-#'   \item{\code{dfargs}}{Arguments to \code{dffun}.}
-#'   \item{\code{misc}}{Miscellaneous information including link function
-#'   details.}
+#'   \item{X}{Model matrix for the reference grid.}
+#'   \item{bhat}{Estimated regression coefficients.}
+#'   \item{V}{Variance-covariance matrix of the coefficients.}
+#'   \item{nbasis}{A matrix indicating no penalized basis functions (empty in
+#'     this case).}
+#'   \item{dffun}{Function returning degrees of freedom for inference (fixed
+#'     at \code{Inf}).}
+#'   \item{dfargs}{Arguments for \code{dffun}.}
+#'   \item{misc}{List of transformation and variance functions used in EMM
+#'     computations.}
 #' }
-#' @importFrom stats vcov
+#'
+#' @importFrom stats model.matrix vcov .getXlevels delete.response qnorm rnorm
 #' @export
-emm_basis.cpn <- function(object, trms, xlev, grid, ...) {    # nolint
-  # Construct model matrix from reference grid
-  X <- model.matrix(trms, grid)         # nolint
+emm_basis.cpn <- function(object, trms, xlev, grid, ...) { # nolint
 
-  # Extract regression coefficients only (exclude mu and sigma)
-  bhat <- object$coefficients  # Named vector
+  # Construct the model matrix based on the reference grid and terms
+  X <- model.matrix(trms, grid) # nolint
 
-  # Extract full vcov and reduce to regression part
-  V_full <- vcov(object)                # nolint
-  V <- V_full[names(bhat), names(bhat), drop = FALSE]   # nolint
+  # Extract regression coefficients
+  bhat <- object$coefficients
 
-  # Match X columns with coefficient names
+  # Extract the full variance-covariance matrix of all estimated parameters
+  V_full <- vcov(object) # nolint
+
+  # Subset the variance-covariance matrix to include only regression parameters
+  V <- V_full[names(bhat), names(bhat), drop = FALSE] # nolint
+
+  # Ensure the column names of X match the coefficient names
   if (!all(names(bhat) %in% colnames(X))) {
     stop("Mismatch between model matrix columns and coefficient names")
   }
-  X <- X[, names(bhat), drop = FALSE]    # nolint
 
-  # No penalized/nuisance terms
+  # Reorder and subset X to match the order of bhat
+  X <- X[, names(bhat), drop = FALSE] # nolint
+
+  # Specify no penalized or nuisance basis functions (not used in this model)
   nbasis <- matrix(0, 0, length(bhat))
   colnames(nbasis) <- names(bhat)
 
-  # Degrees of freedom
-  dfargs <- list(
-    df = if (!is.null(object$df_residual))
-      object$df_residual
-    else
-      Inf
-  )
+
+  # Degrees of freedom used for inference
+  dfargs <- list(df = Inf)
+
+  # Simple function returning the residual df
   dffun <- function(k, dfargs) dfargs$df
 
-  # Specify transformation for emmeans on response scale
-  linkinv <- exp  # Inverse of log link
-  varfun <- function(var) var^2  # Variance function on log scale
+  # Define inverse link function for transformation to response scale
+  linkinv <- exp  # Used for log-link models
 
+  # Define the variance function on the linear predictor scale
+  varfun <- function(var) var^2  # Needed by emmeans for estimating SEs
+
+  # Return the list required by emmeans to construct estimated marginal means
   list(
     X = X,
     bhat = bhat,
@@ -73,9 +77,9 @@ emm_basis.cpn <- function(object, trms, xlev, grid, ...) {    # nolint
     dffun = dffun,
     dfargs = dfargs,
     misc = list(
-      tran = "log",          # Tell emmeans that this is a log-link model
-      inv.link = linkinv,   # How to go back to response scale
-      var.fun = varfun      # Variance function
+      tran = "log",         # Indicates a log-link function
+      inv.link = linkinv,   # How to transform back to response scale
+      var.fun = varfun      # Variance function on the link scale
     )
   )
 }
