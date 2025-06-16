@@ -24,15 +24,7 @@
 #' @examples
 #' # Simulated data
 #' set.seed(123)
-#' n <- 100
-#' x1 <- rnorm(n)
-#' x2 <- factor(sample(c("A", "B"), size = n, replace = TRUE))
-#'
-#' lambda <- exp(0.5 + 0.2 * x1)
-#' N <- rpois(n, lambda) # nolint
-#' y <- ifelse(N == 0, 0, rnorm(n, mean = N * 3, sd = sqrt(N) * 2))
-#'
-#' data <- data.frame(y = y, x1 = x1, x2 = x2)
+#' data <- simulate_cpn_data()
 #'
 #' # Sequential analysis of deviance
 #' fit <- cpn(y ~ x1 + x2, data = data)
