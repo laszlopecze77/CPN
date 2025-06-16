@@ -160,34 +160,32 @@ definite, a warning is issued and standard errors are returned as <code>NA</code
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">n</span> <span class="op">&lt;-</span> <span class="fl">100</span></span></span>
-<span class="r-in"><span><span class="va">x</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">lambda</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="fl">0.5</span> <span class="op">+</span> <span class="fl">0.2</span> <span class="op">*</span> <span class="va">x</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">N</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Poisson.html" class="external-link">rpois</a></span><span class="op">(</span><span class="va">n</span>, <span class="va">lambda</span><span class="op">)</span> <span class="co"># nolint</span></span></span>
-<span class="r-in"><span><span class="va">y</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="va">N</span> <span class="op">==</span> <span class="fl">0</span>, <span class="fl">0</span>, <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span>, mean <span class="op">=</span> <span class="va">N</span> <span class="op">*</span> <span class="fl">3</span>, sd <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="va">N</span><span class="op">)</span> <span class="op">*</span> <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>y <span class="op">=</span> <span class="va">y</span>, x <span class="op">=</span> <span class="va">x</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu">cpn</span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x</span>, data <span class="op">=</span> <span class="va">data</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">data</span> <span class="op">&lt;-</span> <span class="fu"><a href="simulate_cpn_data.html">simulate_cpn_data</a></span><span class="op">(</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Sequential analysis of deviance</span></span></span>
+<span class="r-in"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu">cpn</span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x1</span> <span class="op">+</span> <span class="va">x2</span>, data <span class="op">=</span> <span class="va">data</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Call:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> cpn(formula = y ~ x, data = data)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> cpn(formula = y ~ x1 + x2, data = data)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Deviance Residuals:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    Min     1Q Median     3Q    Max </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> -2.741 -2.140 -1.681  2.407  3.149 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> -2.871 -2.059 -1.269  2.181  3.745 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Coefficients:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             Estimate Std.Error z.value      Pr.z    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)  0.49166   0.12165  4.0414 5.313e-05 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> x            0.20931   0.09367  2.2345   0.02545 *  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)  0.63754   0.15190  4.1969 2.705e-05 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> x1B         -0.60713   0.22934 -2.6473  0.008114 ** </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> x2           0.53609   0.10791  4.9679 6.767e-07 ***</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Estimated mu parameter: 2.9067</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Estimated sigma parameter: 1.5520</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Estimated mu parameter: 0.9600</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Estimated sigma parameter: 1.7062</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Null deviance: 534.45 on 99 degrees of freedom</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Residual deviance: 529.60 on 96 degrees of freedom</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> AIC: 537.60</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Null deviance: 478.20 on 99 degrees of freedom</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Residual deviance: 449.74 on 95 degrees of freedom</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> AIC: 459.74</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
