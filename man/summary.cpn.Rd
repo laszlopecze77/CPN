@@ -35,14 +35,11 @@ standard errors, z-values, p-values, deviance residual summaries, and model
 diagnostics.
 }
 \examples{
-
 set.seed(123)
-n <- 100
-x <- rnorm(n)
-lambda <- exp(0.5 + 0.2 * x)
-N <- rpois(n, lambda) # nolint
-y <- ifelse(N == 0, 0, rnorm(n, mean = N * 3, sd = sqrt(N) * 2))
-fit <- cpn(y ~ x)
+data <- simulate_cpn_data()
+
+# Sequential analysis of deviance
+fit <- cpn(y ~ x1 + x2, data = data)
 summary(fit)
 
 }

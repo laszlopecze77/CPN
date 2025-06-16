@@ -26,7 +26,8 @@ Imports:
     graphics,
     numDeriv,
     Rdpack,
-    stats
+    stats,
+    stats4
 Suggests: 
     testthat (>= 3.0.0),
     knitr,

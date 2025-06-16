@@ -26,18 +26,16 @@
 #'
 #' @seealso [cpn()], [anova.cpn()]
 #' @method summary cpn
-#' @export
-#' @examples
 #'
+#' @examples
 #' set.seed(123)
-#' n <- 100
-#' x <- rnorm(n)
-#' lambda <- exp(0.5 + 0.2 * x)
-#' N <- rpois(n, lambda) # nolint
-#' y <- ifelse(N == 0, 0, rnorm(n, mean = N * 3, sd = sqrt(N) * 2))
-#' fit <- cpn(y ~ x)
+#' data <- simulate_cpn_data()
+#'
+#' # Sequential analysis of deviance
+#' fit <- cpn(y ~ x1 + x2, data = data)
 #' summary(fit)
 #'
+#' @export
 summary.cpn <- function(object, ...) {
   beta_hat <- object$coefficients
   se_hat <- object$se[seq_along(beta_hat)]
