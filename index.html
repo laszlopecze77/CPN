@@ -51,8 +51,13 @@
 </nav><div class="container template-home">
 <div class="row">
   <main id="main" class="col-md-9"><div class="section level1">
-<div class="page-header"><h1 id="cpn">CPN<a class="anchor" aria-label="anchor" href="#cpn"></a>
+<div class="page-header"><h1 id="cpn-">CPN <img src="reference/figures/cpn_reg.svg" align="right" width="300"><a class="anchor" aria-label="anchor" href="#cpn-"></a>
 </h1></div>
+<div class="section level2">
+<h2 id="compound-poisson-normal-regression">Compound Poisson-Normal Regression<a class="anchor" aria-label="anchor" href="#compound-poisson-normal-regression"></a>
+</h2>
+<p>The Compound Poisson-Normal model is used to model data that consist of a random number of additive, continuous outcomes. In this model, the number of events follows a Poisson distribution, while the size of each event is drawn from a Normal distribution. The total observed value is the sum of these normally distributed amounts. This model is useful for describing aggregated outcomes with both random frequency and variation in magnitude, such as healthcare costs, environmental measurements, or biological signals.</p>
+</div>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
@@ -60,6 +65,17 @@
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">require</a></span><span class="op">(</span><span class="st"><a href="https://remotes.r-lib.org" class="external-link">"remotes"</a></span><span class="op">)</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"remotes"</span><span class="op">)</span></span>
 <span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"laszlopecze77/CPN"</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="getting-started">Getting Started<a class="anchor" aria-label="anchor" href="#getting-started"></a>
+</h2>
+<p>See the <a href="https://laszlopecze77.github.io/CPN/articles/CPN-vignette.html">introductory vignette</a>.</p>
+</div>
+<div class="section level2">
+<h2 id="citing-cpn">Citing <code>CPN</code>
+<a class="anchor" aria-label="anchor" href="#citing-cpn"></a>
+</h2>
+<p>To cite <code>CPN</code> please see <a href="https://laszlopecze77.github.io/CPN/authors.html#citation">here</a>.</p>
 </div>
 <div class="section level2">
 <h2 id="development">Development<a class="anchor" aria-label="anchor" href="#development"></a>
