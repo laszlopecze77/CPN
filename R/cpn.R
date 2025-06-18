@@ -52,7 +52,6 @@
 #' set.seed(123)
 #' data <- simulate_cpn_data()
 #'
-#' # Sequential analysis of deviance
 #' fit <- cpn(y ~ x1 + x2, data = data)
 #' summary(fit)
 #'
