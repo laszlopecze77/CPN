@@ -1,0 +1,39 @@
+Package: CPN
+Title: Compound Poisson-Normal Regression
+Version: 0.0.0.9000
+Authors@R: c(
+    person(given ="Laszlo",
+           family =  "Pecze",
+           role = c("aut", "cre"),
+           email = "laszlopecze77@gmail.com", 
+           comment = c(ORCID = "0000-0002-7036-5756")),
+    person(given = "François",
+           family = "Collin",
+           role = "ctb",
+           email = "fca.collin@gmail.com",
+           comment = c(ORCID = "0000-0003-0524-5755"))
+           )
+Description: Provides tools to fit regression models when the outcome follows a 
+  Compound Poisson-Normal (CPN) distribution. The model assumes a 
+  Poisson-distributed count of latent normal variables whose sum is observed, 
+  allowing joint modeling of zero inflation and continuous positive values. 
+  Includes methods for estimation, inference, simulation, and model diagnostics.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+Imports: 
+    emmeans,
+    graphics,
+    numDeriv,
+    Rdpack,
+    stats,
+    stats4
+Suggests: 
+    testthat (>= 3.0.0),
+    knitr,
+    lintr,
+    rmarkdown
+VignetteBuilder: knitr
+RoxygenNote: 7.3.2
+RdMacros: Rdpack
+URL: https://laszlopecze77.github.io/CPN/

@@ -1,0 +1,282 @@
+---
+title: "Compound Poisson-Normal Regression"
+author: "Laszlo Pecze"
+date: "`r Sys.Date()`"
+bibliography: references.bib
+nocite: |
+  @Nascimento2019, @hu2024, @raqab2021
+output:
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 2
+vignette: >
+  %\VignetteIndexEntry{Compound Poisson-Normal Regression}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#"
+)
+```
+
+
+
+
+## Introduction
+
+In many applied settings—including insurance claims, biological systems, and environmental monitoring—the observed data arise from a random number of additive events, where each event contributes a continuous value. A natural model for such data is the **Compound Poisson-Normal (CPN)** distribution.
+
+The CPN model assumes that the number of events follows a Poisson distribution, and that each event contributes an independent and identically distributed (i.i.d.) **normally distributed** amount.
+
+Formally, let:
+
+- \( N \sim \text{Poisson}(\lambda) \) denote the number of events,
+- \( X_1, X_2, \ldots, X_N \overset{\text{i.i.d.}}{\sim} \mathcal{N}(\mu, \sigma^2) \), independent of \( N \),
+
+Then the total observed outcome is modeled as a **compound sum**:
+
+\[
+Y = \sum_{i=1}^{N} X_i
+\]
+
+The resulting distribution of \( Y \) is known as the **Compound Poisson-Normal distribution**.
+
+
+The first two moments of the CPN distribution are:
+
+\[
+\mathbb{E}[Y] = \lambda \mu,\quad \text{Var}(Y) = \lambda (\mu^2 + \sigma^2)
+\]
+
+These follow from the properties of the compound distribution, combining Poisson and Gaussian contributions.
+The (approximate) probability density function (pdf) of \( Y \) is:
+
+\[
+f_Y(y; \lambda, \mu, \sigma) =
+\begin{cases}
+e^{-\lambda}, & \text{if } y = 0 \\\\
+\sum_{k=1}^{K_{\text{max}}} \frac{e^{-\lambda} \lambda^k}{k!} \cdot \frac{1}{\sqrt{2\pi k \sigma^2}} \exp\left( -\frac{(y - k\mu)^2}{2k\sigma^2} \right), & \text{if } y \neq 0
+\end{cases}
+\]
+
+**Where:**
+
+- \( y \): the observed total from the compound process  
+- \( \lambda \): expected number of Poisson events  
+- \( \mu \): mean of each normal component  
+- \( \sigma \): standard deviation of each normal component  
+- \( k \): number of events (from 1 to \( K_{\text{max}} \))  
+- \( K_{\text{max}} \): maximum number of events used in the approximation  
+
+When \( k = 0 \), the sum is defined as a point mass at zero, and its probability is:
+
+\[
+P(Y = 0) = P(N = 0) = e^{-\lambda}
+\]
+
+In theory, the compound distribution sums over an infinite range of possible Poisson event counts. In practice, this sum must be **truncated** at a finite maximum value \( K_{\max} \), chosen so that the remaining tail probability is negligible.
+
+## Getting Started
+
+To use the function, load the package:
+
+```{r library}
+library(CPN)
+```
+
+## Simulating Data
+
+We’ll simulate a dataset that mimics typical CPN behavior. This includes both categorical and continuous predictors, and outcomes generated via a Poisson count of normally distributed values.
+
+```{r simu0, message=FALSE, warning=FALSE, include=FALSE}
+simulate_cpn_data <- function(n = 100,
+                              beta = c(0.5, -0.3, 0.7),
+                              mu = 1,
+                              sigma = 2) {
+  set.seed(123)  # For reproducibility
+
+  # Simulate predictors
+  x1 <- factor(sample(c("A", "B"), size = n, replace = TRUE))  # Categorical
+  x2 <- rnorm(n)  # Continuous
+
+  # Create model matrix (includes intercept and dummy variable for x1)
+  X <- model.matrix(~ x1 + x2) # nolint
+
+  # Compute linear predictor and Poisson rates
+  eta <- X %*% beta
+  lambda <- exp(eta)
+
+  # Simulate response variable
+  y <- numeric(n)
+  for (i in 1:n) {
+    k <- stats::rpois(1, lambda[i])
+    if (k > 0) {
+      y[i] <- sum(stats::rnorm(k, mean = mu, sd = sigma))
+    } else {
+      y[i] <- 0
+    }
+  }
+
+  # Return as a data.frame
+  data.frame(y = y, x1 = x1, x2 = x2)
+}
+```
+
+```{r simu, message=FALSE, warning=FALSE}
+set.seed(123)
+data <- simulate_cpn_data()
+head(data)
+```
+
+
+## Plot the simulated data
+
+Visualize the response y against predictor x2, colored by group x1.
+```{r simuplot, message=FALSE, warning=FALSE}
+# Scatter plot of y vs x1
+stripchart(
+  y ~ x1, data = data,
+  vertical = TRUE, method = "jitter",
+  pch = 19, cex = 0.6,
+  col = c("blue",  "red"),
+  xlab = "x1", ylab = "y",
+  main = "Scatter Plot of y by x1"
+)
+
+```
+
+##  Fit the CPN Model
+Fit a Compound Poisson-Normal regression model to the data using a standard formula interface. The response variable y is modeled as a function of predictors x1 (categorical) and x2 (continuous).
+```{r}
+fit <- cpn(y ~ x1 + x2, data = data)
+```
+
+##  Summary of Results
+Get a summary of the fitted model, including coefficient estimates, standard errors, z-values, and p-values. The summary also includes estimates of the mu and sigma parameters (mean and SD of the normal component) and model fit statistics like AIC.
+```{r}
+summary(fit)
+```
+
+##  Extracting Model Components
+You can directly access key components of the fitted model object:
+```{r}
+fit$coefficients
+fit$mu
+fit$sigma
+fit$fitted_values[1:10]  # preview only
+```
+
+##  Coefficients and Interpretation
+Use coef() to extract model coefficients. Setting full = FALSE shows only the linear predictor coefficients (excluding auxiliary parameters like mu and sigma).
+
+```{r coef}
+coef(fit)
+coef(fit, full = FALSE)  # Includes only linear predictors
+```
+
+##  Diagnostics and Residuals
+Basic diagnostic plots and residuals help check model fit and detect issues like non-linearity or outliers.
+```{r diagnostics}
+plot(fit)
+residuals(fit)[1:10]
+```
+
+##  Likelihood and Information Criteria
+These metrics are useful for comparing model fit. `logLik()` gives the log-likelihood, `AIC()` the Akaike Information Criterion (lower is better), and `vcov()` returns the variance-covariance matrix of the parameters.
+
+```{r fitstats}
+logLik(fit)
+AIC(fit)
+vcov(fit)
+```
+
+## Type I Analysis of Deviance
+
+The function `anova(fit)` provides a sequential (Type I) analysis of deviance.  
+This examines the incremental contribution of each predictor to the model's fit, based on the order in which they appear in the formula.
+
+```{r anova}
+anova(fit)
+```
+
+## Model Update and Comparison
+You can update a model (e.g., remove predictors) and compare nested models using the likelihood ratio test:
+```{r update-anova}
+fit2 <- update(fit, . ~ . - x2)
+
+anova(fit, fit2)  # Likelihood ratio test
+```
+
+
+## Prediction
+
+Once you have fitted a Compound Poisson-Normal (CPN) regression model using the `cpn()` function, you can generate predictions on both the **original data** and **new observations** using the `predict()` method for `cpn` objects.
+
+This method supports three prediction types:
+
+- **"link"**: Returns the linear predictor \(\eta = X\beta\).
+- **"rate"**: Returns the rate component \(\exp(\eta)\), representing the expected number of latent events.
+- **"response"**: Returns the expected response \(\mathbb{E}[Y] = \mu \cdot \exp(\eta)\), combining the frequency and magnitude components of the compound distribution.
+
+Additionally, confidence intervals can be requested using the `interval = "confidence"` argument, which computes approximate **normal-theory confidence intervals** using the **delta method**.
+
+### Predicting on the Original Data
+
+By default, `predict()` uses the original dataset used for model fitting. You can obtain point estimates or confidence intervals for the fitted values.
+
+```{r predict-original}
+# Point predictions on the response scale
+predict(fit, type = "response")[1:5]
+
+# Confidence intervals for response predictions
+predict(fit, type = "response", interval = "confidence")[1:5, ]
+```
+
+### Predicting on New Data
+
+To make predictions on new data, provide a `data.frame` to the `newdata` argument. The function will internally align factor levels and construct the appropriate model matrix.
+
+```{r predict-new}
+# Define new observations
+new_df <- data.frame(
+  x1 = c("A", "A", "B", "B"),
+  x2 = c(-0.5, -0.2, -0.3, -0.3)
+)
+
+# Predictions on the link scale (linear predictor η)
+predict(fit, newdata = new_df, type = "link", interval = "confidence")
+
+# Predictions on the rate scale (exp(η))
+predict(fit, newdata = new_df, type = "rate", interval = "confidence")
+
+# Predictions on the response scale (μ × exp(η))
+predict(fit, newdata = new_df, type = "response", interval = "confidence")
+```
+
+### Confidence Intervals
+
+When `interval = "confidence"` is used:
+
+- On the **link** and **rate** scales, confidence intervals are based solely on the uncertainty in the regression coefficients (\(\beta\)).
+- On the **response** scale, the intervals additionally incorporate uncertainty in the mean magnitude parameter (\(\mu\)) using the **delta method**:
+
+\[
+\text{SE}[\mu \cdot \exp(\eta)] \approx \sqrt{(\mu \cdot \exp(\eta))^2 \cdot \text{Var}[\eta] + (\exp(\eta))^2 \cdot \text{Var}[\mu]}
+\]
+
+This provides a more accurate reflection of total uncertainty when predicting expected values of the compound outcome.
+
+```
+
+## Conclusion
+
+The `CPN` package enables effective modeling of semicontinuous data using the
+Compound Poisson-Normal model. It supports flexible model specification, S3
+methods for diagnostics and inference, and prediction on new data. For more
+advanced use, refer to the function documentation or the package reference
+manual.
+
+##  References
