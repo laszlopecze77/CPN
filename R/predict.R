@@ -38,10 +38,11 @@
 #'   \code{\link{predict}}
 #'
 #' @examples
-#' \dontrun{
-#' fit <- cpn(y ~ x1 + x2, data = mydata)
-#' predict(fit, newdata = mynewdata, type = "response", interval = "confidence")
-#' }
+#' set.seed(123)
+#' data <- simulate_cpn_data()
+#'
+#' fit <- cpn(y ~ x1 + x2, data = data)
+#' predict(fit, type = "response", interval = "confidence")
 #'
 #' @export
 predict.cpn <- function(object,
