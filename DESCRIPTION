@@ -1,6 +1,6 @@
 Package: CPN
 Title: Compound Poisson-Normal Regression
-Version: 0.0.0.9000
+Version: 0.1.0
 Authors@R: c(
     person(given ="Laszlo",
            family =  "Pecze",
@@ -32,7 +32,8 @@ Suggests:
     testthat (>= 3.0.0),
     knitr,
     lintr,
-    rmarkdown
+    rmarkdown,
+    tools
 VignetteBuilder: knitr
 RoxygenNote: 7.3.2
 RdMacros: Rdpack
