@@ -308,9 +308,9 @@ lm_pval <- if (length(lm_row) == 1) anova_lm[lm_row, "Pr(>F)"] else NA
 
 # Format p-values
 format_pval <- function(p) {
-  if (is.na(p)) return(NA)
-  else if (p < 0.001) return("<0.001")
-  else return(sprintf("%.3f", p))
+  if (is.na(p)) NA
+  else if (p < 0.001) "<0.001"
+  else sprintf("%.3f", p)
 }
 
 lm_pval_tex <- format_pval(lm_pval)
