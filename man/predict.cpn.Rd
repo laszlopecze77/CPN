@@ -57,10 +57,11 @@ Factor levels in \code{newdata} are aligned to match those used in the
 original model fit.
 }
 \examples{
-\dontrun{
-fit <- cpn(y ~ x1 + x2, data = mydata)
-predict(fit, newdata = mynewdata, type = "response", interval = "confidence")
-}
+set.seed(123)
+data <- simulate_cpn_data()
+
+fit <- cpn(y ~ x1 + x2, data = data)
+predict(fit, type = "response", interval = "confidence")
 
 }
 \seealso{

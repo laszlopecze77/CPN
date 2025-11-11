@@ -26,6 +26,7 @@ Imports:
     graphics,
     numDeriv,
     Rdpack,
+    rjags,
     stats,
     stats4
 Suggests: 

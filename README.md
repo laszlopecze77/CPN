@@ -1,4 +1,4 @@
-# CPN  <img src="man/figures/cpn_reg.svg" align="right" width="300" />
+# CPN  <img src="man/figures/cpn_reg.svg" align="right" width="100" />
 
 ## Compound Poisson-Normal Regression
 
